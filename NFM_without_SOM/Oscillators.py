@@ -113,7 +113,14 @@ class FreqAdaptiveCoupledNFM_D2D(object):
     " D2D is Dynamic input to Dynamic system\
     With all to all connections usage: >> "
 
-    def __init__(self, size, exe_rad = 2,inhb_rad = 4, exe_ampli = 2., inhb_ampli = 1):
+    def __init__(self, 
+                size=(10,10), 
+                exe_rad = 2,
+                inhb_rad = 4, 
+                exe_ampli = 2., 
+                inhb_ampli = 1, 
+                test=False):
+
         self.eRad  = exe_rad
         self.iRad  = inhb_rad
         # gaussian statistics...
@@ -123,8 +130,13 @@ class FreqAdaptiveCoupledNFM_D2D(object):
         self.o     = 10*abs(np.random.randn(size[0], size[1]))
         self.Z     = 0.05*abs(np.random.randn(size[0], size[1]))
         self.W     = 0.05*abs(np.random.randn(size[0], size[1]))
-        self.Waff  = 0.05*abs(np.random.randn(size[0], size[1], size[0], size[1]))
-        # self.Waff  = np.load('./SOM_weights.npy').reshape(10,10,10,10)
+        if not test:
+            # self.Waff  = abs(np.random.randn(size[0], size[1], size[0], size[1]))
+            self.Waff  = np.load('./SOM_weights.npy').reshape(10,10,10,10)
+            # np.random.shuffle(self.Waff)
+        else:
+            self.Waff  = np.load('./nfm_weights_4.npy').reshape(10,10,10,10)
+
         self.Wlat  = np.zeros((size[0], size[1], size[0], size[1]))
         self.Wlattemp  = np.zeros((size[0], size[1], size[0]+2*self.iRad, size[1]+2*self.iRad))
         
@@ -141,6 +153,8 @@ class FreqAdaptiveCoupledNFM_D2D(object):
                 self.Wlat[i,j,:,:] = self.Wlattemp[i,j,self.iRad:self.iRad + size[0], self.iRad:self.iRad + size[1]]
 
         self.Wlat = self.Normalize(self.Wlat)
+        # plt.imshow(self.Wlat[4,5,:,:])
+        # plt.show()
 
     def Normalize(self, mat, type_='L1'):
         " "
@@ -199,29 +213,31 @@ class FreqAdaptiveCoupledNFM_D2D(object):
         """
 
         """
-        # temp_aff = np.zeros_like(self.Z)
-        # for m in range(self.Z.shape[0]):
-        #     for n in range(self.Z.shape[1]):
-        #         temp_aff[m,n] = np.sum((aff + self.Z[m,n]))#self.Waff[m, n, :, :])
+        temp_aff = np.zeros_like(self.Z)
+        for m in range(self.Z.shape[0]):
+            for n in range(self.Z.shape[1]):
+                temp_aff[m,n] = np.sum(aff *self.Waff[m, n, :, :])
         
-        temp_aff = np.sum(self.Waff.copy().dot(aff), axis=(2,3))
-        temp_aff = temp_aff - self.Z
-        temp_aff = self.Normalize(temp_aff, type_='MinMax')
+        # temp_aff = np.sum(self.Waff.copy().dot(aff), axis=(2,3))
+        # temp_aff = temp_aff + self.Z
+        temp_aff = self.Normalize(temp_aff)
         temp_aff = temp_aff if not np.isnan(temp_aff).any() else 0.0
 
 
-        # temp_lat = np.zeros_like(self.Z)
+        temp_lat = np.zeros_like(self.Z)
 
-        # for m in range(self.Z.shape[0]):
-        #     for n in range(self.Z.shape[1]):
-        #         temp_lat[m,n] = np.sum((self.Z - self.Z[m,n])*self.Wlat[m, n, :, :])
+        for m in range(self.Z.shape[0]):
+            for n in range(self.Z.shape[1]):
+                temp_lat[m,n] = np.sum((self.Z - self.Z[m,n])*self.Wlat[m, n, :, :])
         
-        temp_lat = np.sum(self.Wlat.copy().dot(self.Z), axis=(2,3))
-        temp_lat = temp_lat - self.Z # to ensure self is always high
+        # temp_lat = np.sum(self.Wlat.copy().dot(self.Z), axis=(2,3))
+        temp_lat = temp_lat + self.Z 
         temp_lat = self.Normalize(temp_lat)
         temp_lat = temp_lat if not np.isnan(temp_lat).any() else 0.0
 
-        I = 0.05 + 0.6*temp_aff + 0.4*temp_lat
+        temp_aff = abs(0.1*temp_aff)
+        temp_lat = abs(0.01*temp_lat)
+        I = 0.03 + temp_lat  # + temp_aff
 
         v1 = self.Z
         w1 = self.W
@@ -232,7 +248,7 @@ class FreqAdaptiveCoupledNFM_D2D(object):
         eps   = 0.008
 
         fv   = v1*(a - v1)*(v1 - 1)
-        vdot = (fv - w1 + I)/0.08
+        vdot = (fv - w1 + I)/0.01
         wdot = eps*(v1 - gamma*w1)
 
         # fv   = v1*(v1+12)*(1.-v1)
@@ -251,6 +267,7 @@ class FreqAdaptiveCoupledNFM_D2D(object):
         if verbose:
             print 'max lat.........: {}'.format(np.max(temp_lat)) + '  min lat.......: {}'.format(np.min(temp_lat))
             print 'max aff.........: {}'.format(np.max(temp_aff)) + '  min lat.......: {}'.format(np.min(temp_aff))
+            print 'max I ....: {}'.format(np.max(I)) + '  min I....: {}'.format(np.min(I))
 
     def updateWeights(self, deltaw):
         self.Waff += deltaw

@@ -26,7 +26,7 @@ X, Y = np.meshgrid(X, Y)
 class NFM(object):
 	def __init__(self, ci=0.3, test=False):
 		self.ci    = ci
-		self.ita   = 0.1
+		self.ita   = 0.001
 		self.d2dnfm = FreqAdaptiveCoupledNFM_D2D(size=(config.N, config.N),
 						exe_rad = config.eRad,
 						inhb_rad = config.N, # for global inhabition
@@ -137,7 +137,8 @@ class NFM(object):
 				# deltaw[ii, jj, :, :] = 1*self.ita*np.cos(np.mean(relative_phase, axis=0))
 				# deltaw[ii, jj, :, :] = 1*self.ita*np.mean(NFM*rI, axis=0)
 				temp = 1*self.ita*np.mean(NFM*rI*(1+np.cos(relative_phase)), axis=0)
-				temp[temp < 0.90*abs(np.max(temp))] = 0
+				# print (np.max(np.cos(relative_phase)), np.min(np.cos(relative_phase)))
+				# temp[temp < 0.90*abs(np.macostoolsax(temp))] = 0
 				# plt.imshow(rI[0, :, :])
 				# plt.show()
 				deltaw[ii, jj, :, :] = temp 
@@ -304,7 +305,7 @@ class NFM(object):
 				_, _ = self.one_fit_D2D(images[jj])
 				self.d2dnfm.updateWeights(self.deltaw)
 
-				self.display_wts()
+				# self.display_wts()
 				a.append(np.mean(self.deltaw))
 		plt.plot(a)
 		plt.show()
@@ -351,7 +352,7 @@ class NFM(object):
 
 
 if __name__ == '__main__':
-	nfm = NFM(test=True)
+	nfm = NFM(test=False)
 	images = OrientationBars.reshape(-1, 10, 10)
 	# np.random.shuffle(images)
 	# count = 1
@@ -363,8 +364,8 @@ if __name__ == '__main__':
 	# 	count += 1
 	# plt.show()
 
-	# nfm.fit_train_data(images, epochs = 40)
-	# nfm.save()
+	nfm.fit_train_data(images, epochs = 1200)
+	nfm.save()
 
 	nfm.response(images, simulations=2)
 

@@ -131,8 +131,8 @@ class FreqAdaptiveCoupledNFM_D2D(object):
         self.Z     = 0.05*abs(np.random.randn(size[0], size[1]))
         self.W     = 0.05*abs(np.random.randn(size[0], size[1]))
         if not test:
-            # self.Waff  = abs(np.random.randn(size[0], size[1], size[0], size[1]))
-            self.Waff  = np.load('./SOM_weights.npy').reshape(10,10,10,10)
+            self.Waff  = abs(np.random.randn(size[0], size[1], size[0], size[1]))
+            # self.Waff  = np.load('./SOM_weights.npy').reshape(10,10,10,10)
             # np.random.shuffle(self.Waff)
         else:
             self.Waff  = np.load('./nfm_weights_4.npy').reshape(10,10,10,10)

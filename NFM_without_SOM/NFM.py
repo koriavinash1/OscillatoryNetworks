@@ -26,7 +26,7 @@ X, Y = np.meshgrid(X, Y)
 class NFM(object):
 	def __init__(self, ci=0.3, test=False):
 		self.ci    = ci
-		self.ita   = 0.1
+		self.ita   = 0.05
 		self.d2dnfm = FreqAdaptiveCoupledNFM_D2D(size=(config.N, config.N),
 						exe_rad = config.eRad,
 						inhb_rad = config.N, # for global inhabition
@@ -137,7 +137,8 @@ class NFM(object):
 				# deltaw[ii, jj, :, :] = 1*self.ita*np.cos(np.mean(relative_phase, axis=0))
 				# deltaw[ii, jj, :, :] = 1*self.ita*np.mean(NFM*rI, axis=0)
 				temp = 1*self.ita*np.mean(NFM*rI*(1+np.cos(relative_phase)), axis=0)
-				temp[temp < 0.90*abs(np.max(temp))] = 0
+				# print (np.max(np.cos(relative_phase)), np.min(np.cos(relative_phase)))
+				# temp[temp < 0.90*abs(np.macostoolsax(temp))] = 0
 				# plt.imshow(rI[0, :, :])
 				# plt.show()
 				deltaw[ii, jj, :, :] = temp 
@@ -161,7 +162,7 @@ class NFM(object):
 		# deltaw[deltaw < 0.95* np.max(mean)] = 0
 		return deltaw
 
-	def calculate_winning_statistics(self,input_phase, NFM_phase):
+	def calculate_winning_statistics(self, input_phase, NFM_phase, input_R, NFM_R):
 		relative_phase = abs(input_phase - NFM_phase)
 		
 		for ii in range(NFM_phase.shape[1]):
@@ -171,9 +172,9 @@ class NFM(object):
 					ref_phase = np.zeros_like(ref_phase)
 				relative_phase[:, ii, jj] = ref_phase
 
-		mean_  = np.mean(relative_phase, axis = 0)
-		mean_c = np.cos(mean_)
-
+		# mean_  = np.mean(relative_phase, axis = 0)
+		# mean_c = np.cos(mean_)
+		mean_c   = np.mean(input_R*NFM_R*(1 + np.cos(relative_phase)), axis=0)
 		# mean_c[mean_c < abs(np.max(mean_c))] = 0
 		# mean_c[mean_c == np.max(mean_c)]     = 1 
 		return  mean_c
@@ -294,7 +295,7 @@ class NFM(object):
 
 		self.deltaw = self.deltaweights_polar(rI, rNFM, phiI, phiNFM)
 		# self.deltaw = self.deltaweights_xy(s2d_nsheets, d2d_nsheets)
-		return phiI, phiNFM
+		return phiI, phiNFM, rI, rNFM
 
 	def fit_train_data(self, images, epochs = 40):
 		a = []
@@ -304,8 +305,10 @@ class NFM(object):
 				_, _ = self.one_fit_D2D(images[jj])
 				self.d2dnfm.updateWeights(self.deltaw)
 
-				self.display_wts()
+				# self.display_wts()
 				a.append(np.mean(self.deltaw))
+			if i % 40 == 39:
+				self.save()
 		plt.plot(a)
 		plt.show()
 		pass
@@ -317,8 +320,8 @@ class NFM(object):
 			# response_maps = np.zeros((4, 10, 10))
 
 			for i, jj in enumerate(range(1, len(images)+1, 25)):
-				Iphs, NFMphs = self.one_fit_D2D(images[jj])
-				winning_stat = self.calculate_winning_statistics(Iphs, NFMphs)
+				Iphs, NFMphs, IR, NFMR = self.one_fit_D2D(images[jj])
+				winning_stat = self.calculate_winning_statistics(Iphs, NFMphs, IR, NFMR)
 				# plt.imshow(winning_stat)
 				# plt.show()
 				response_maps_per_simulations[i, :, :] += winning_stat
@@ -363,10 +366,10 @@ if __name__ == '__main__':
 	# 	count += 1
 	# plt.show()
 
-	# nfm.fit_train_data(images, epochs = 40)
-	# nfm.save()
+	# nfm.fit_train_data(images, epochs = 120)
 
-	nfm.response(images, simulations=2)
+
+	nfm.response(images, simulations=4)
 
 	# weights = np.load('./nfm_weights.npy').reshape(10,10,10,10)
 	weights = np.load('./nfm_weights_4.npy').reshape(10,10,10,10)

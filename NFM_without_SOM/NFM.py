@@ -354,7 +354,7 @@ class NFM(object):
 
 
 if __name__ == '__main__':
-	nfm = NFM(test=True)
+	nfm = NFM(test=False)
 	images = OrientationBars.reshape(-1, 10, 10)
 	# np.random.shuffle(images)
 	# count = 1
@@ -367,7 +367,6 @@ if __name__ == '__main__':
 	# plt.show()
 
 	# nfm.fit_train_data(images, epochs = 120)
-
 
 	nfm.response(images, simulations=4)
 

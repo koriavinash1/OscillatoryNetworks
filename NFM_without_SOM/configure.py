@@ -12,7 +12,7 @@ class Config():
 	freq_ctrl= 0.08
 	dt       = 0.01
 	sdt      = 0.1
-	T        = 70
+	T        = 100
 	transtime= 100
 
 	nSimulations  = 10

@@ -26,7 +26,7 @@ X, Y = np.meshgrid(X, Y)
 class NFM(object):
 	def __init__(self, ci=0.3, test=False):
 		self.ci    = ci
-		self.ita   = 0.05
+		self.ita   = 0.1
 		self.d2dnfm = FreqAdaptiveCoupledNFM_D2D(size=(config.N, config.N),
 						exe_rad = config.eRad,
 						inhb_rad = config.N, # for global inhabition
@@ -115,10 +115,11 @@ class NFM(object):
 	def deltaweights_polar(self, rI, rNFM, argI, argNFM):
 		# rI, rNFM 3D spatio-temporal signal
 		# returns (N, N, N, N) 4D weight delta weights
-		rI, rNFM, argI, argNFM = rI/np.max(rI), rNFM/np.max(rNFM), argI/np.max(argI), argNFM/np.max(argNFM)
+		# rI, rNFM, argI, argNFM = rI/np.max(rI), rNFM/np.max(rNFM), argI/np.max(argI), argNFM/np.max(argNFM)
+		# rI, rNFM, argI, argNFM = rI[1000:], rNFM[1000:], argI[1000:], argNFM[1000:]
 		# print (np.max(iterable, key)(rNFM), np.min(rNFM), np.max(rI), np.min(rI))
-
-		deltaw = np.empty((config.N, config.N, config.N, config.N)) 
+		max_sheet = np.empty((10, 10))
+		self.deltaw = np.empty((config.N, config.N, config.N, config.N)) 
 		for ii in range(config.N):
 			for jj in range(config.N):
 				NFM = rNFM[:, ii, jj].reshape(-1, 1, 1)
@@ -136,17 +137,24 @@ class NFM(object):
 
 				# deltaw[ii, jj, :, :] = 1*self.ita*np.cos(np.mean(relative_phase, axis=0))
 				# deltaw[ii, jj, :, :] = 1*self.ita*np.mean(NFM*rI, axis=0)
-				temp = 1*self.ita*np.mean(NFM*rI*(1+np.cos(relative_phase)), axis=0)
+				temp = 1*self.ita*np.mean(NFM*rI*(1 + np.cos(relative_phase)), axis=0)
 				# print (np.max(np.cos(relative_phase)), np.min(np.cos(relative_phase)))
-				# temp[temp < 0.90*abs(np.macostoolsax(temp))] = 0
+				# temp[temp < 0.95*abs(np.max(temp))] = 0
 				# plt.imshow(rI[0, :, :])
 				# plt.show()
-				deltaw[ii, jj, :, :] = temp 
+				self.deltaw[ii, jj, :, :] = temp 
+				max_sheet[ii, jj] = np.max(temp)
+
+		maxv = np.max(max_sheet)
+		for ii in range(config.N):
+			for jj in range(config.N):
+				if max_sheet[ii, jj] < 0.95*maxv:
+					self.deltaw[ii, jj, :, :] = np.zeros((10,10))
 
 		# Winning statistics..........
 		# mean = np.mean(deltaw, axis = 0)
 		# deltaw[deltaw < np.max(mean)] = 0
-		return deltaw
+		return self.deltaw
 
 	def deltaweights_xy(self, s2d, d2d):
 		# rI, rNFM 3D spatio-temporal signal
@@ -183,9 +191,9 @@ class NFM(object):
 	def one_fit_D2D(self, image):
 		"fits one image at a time Train NFM end2end"
 		binary_image = image.copy()
-		binary_image[binary_image > 0.5] = 1.0
 		binary_image[binary_image < 0.5] = -1.0
-
+		binary_image[binary_image > 0.5] = 1.0
+		self.bimage = binary_image
 		# plt.plot(np.sin((np.arange(0,5000)/100)*2*3.14*0.02))
 		# plt.show()
 
@@ -301,11 +309,12 @@ class NFM(object):
 		a = []
 		assert len(images.shape) == 3
 		for i in tqdm(range(epochs)):
-			for jj in tqdm(range(0, len(images), 25)):
-				_, _ = self.one_fit_D2D(images[jj])
-				self.d2dnfm.updateWeights(self.deltaw)
+			for jj in tqdm(range(0, len(images)-4, len(images)//4)):
 
-				# self.display_wts()
+				_, _, _, _ = self.one_fit_D2D(images[jj])
+				self.d2dnfm.updateWeights(self.deltaw)
+				if i % 40 == 39:
+					self.display_wts()
 				a.append(np.mean(self.deltaw))
 			if i % 40 == 39:
 				self.save()
@@ -319,7 +328,8 @@ class NFM(object):
 		for sim in tqdm(range(simulations)):
 			# response_maps = np.zeros((4, 10, 10))
 
-			for i, jj in enumerate(range(1, len(images)+1, 25)):
+			for i, jj in enumerate(range(0, len(images), 20)):
+				print jj
 				Iphs, NFMphs, IR, NFMR = self.one_fit_D2D(images[jj])
 				winning_stat = self.calculate_winning_statistics(Iphs, NFMphs, IR, NFMR)
 				# plt.imshow(winning_stat)
@@ -343,11 +353,21 @@ class NFM(object):
 	def display_wts(self):
 		plt.ion()
 		weights = self.d2dnfm.Waff.reshape(10,10,10,10)
-		a = np.empty((100,100))
+		deltaweights = self.deltaw.reshape(10,10,10,10)
+		a = np.empty((100, 100))
+		b = np.empty((100, 100))
 		for i in range(10):
 			for j in range(10):
 				a[i*10:(i+1)*10, j*10:(j+1)*10] = weights[i,j,:,:]
+				b[i*10:(i+1)*10, j*10:(j+1)*10] = deltaweights[i,j,:,:]
+		plt.subplot(1,3,1)
+		plt.imshow(self.bimage)
+		plt.subplot(1,3,2)
 		plt.imshow(a)
+		plt.xlabel("max : {:.4f}".format(np.max(a)) + "  min: {:.4f}".format(np.min(a)))
+		plt.subplot(1,3,3)
+		plt.imshow(b)
+		plt.xlabel("max : {:.4f}".format(np.max(b)) + "  min: {:.4f}".format(np.min(b)))
 		plt.show()
 		plt.pause(0.1)
 
@@ -366,9 +386,9 @@ if __name__ == '__main__':
 	# 	count += 1
 	# plt.show()
 
-	# nfm.fit_train_data(images, epochs = 120)
+	nfm.fit_train_data(images, epochs = 120)
 
-	nfm.response(images, simulations=4)
+	# nfm.response(images, simulations=4)
 
 	# weights = np.load('./nfm_weights.npy').reshape(10,10,10,10)
 	weights = np.load('./nfm_weights_4.npy').reshape(10,10,10,10)

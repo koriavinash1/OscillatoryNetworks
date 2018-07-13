@@ -26,10 +26,10 @@ X, Y = np.meshgrid(X, Y)
 class NFM(object):
 	def __init__(self, ci=0.3, test=False):
 		self.ci    = ci
-		self.ita   = 0.1
+		self.ita   = 0.05 # 0.5
 		self.d2dnfm = FreqAdaptiveCoupledNFM_D2D(size=(config.N, config.N),
 						exe_rad = config.eRad,
-						inhb_rad = config.N, # for global inhabition
+						inhb_rad = config.iRad, # for global inhabition
 						exe_ampli = config.eA,
 						inhb_ampli = config.iA,
 						test = test)# self.phase is (T/dt, N, N) shape
@@ -313,8 +313,8 @@ class NFM(object):
 
 				_, _, _, _ = self.one_fit_D2D(images[jj])
 				self.d2dnfm.updateWeights(self.deltaw)
-				if i % 40 == 39:
-					self.display_wts()
+				#if i % 4 == 3:
+				self.display_wts()
 				a.append(np.mean(self.deltaw))
 			if i % 40 == 39:
 				self.save()
@@ -328,7 +328,7 @@ class NFM(object):
 		for sim in tqdm(range(simulations)):
 			# response_maps = np.zeros((4, 10, 10))
 
-			for i, jj in enumerate(range(0, len(images), 20)):
+			for i, jj in enumerate(range(0, len(images)-4, len(images)//4)):
 				print jj
 				Iphs, NFMphs, IR, NFMR = self.one_fit_D2D(images[jj])
 				winning_stat = self.calculate_winning_statistics(Iphs, NFMphs, IR, NFMR)
@@ -342,13 +342,14 @@ class NFM(object):
 		pass
 
 	def save(self):
-		np.save('./nfm_weights_4.npy', self.d2dnfm.Waff)
+		np.save('./nfm_weights_4_LR0.05.npy', self.d2dnfm.Waff)
 
-	def check_resp(self, image, aff_path = './nfm_weights.npy'):
+	def check_resp(self, image, aff_path = './nfm_weights_4.npy'):
 		self.d2dnfm.loadWeights(path=aff_path)
-		phase, _ = self.one_fit_D2D(image)
-		phase_map = np.mean(phase - phase[:, 0,0].reshape(-1, 1, 1), 0)
-		return phase_map
+		resp = np.sum(self.d2dnfm.Waff*image.reshape(1,1,10,10), axis=(2,3))
+		# phase, _ = self.one_fit_D2D(image)
+		# phase_map = np.mean(phase - phase[:, 0,0].reshape(-1, 1, 1), 0)
+		return resp
 
 	def display_wts(self):
 		plt.ion()
@@ -386,7 +387,7 @@ if __name__ == '__main__':
 	# 	count += 1
 	# plt.show()
 
-	nfm.fit_train_data(images, epochs = 120)
+	# nfm.fit_train_data(images, epochs = 10)
 
 	# nfm.response(images, simulations=4)
 
@@ -398,3 +399,10 @@ if __name__ == '__main__':
 			a[i*10:(i+1)*10, j*10:(j+1)*10] = weights[i,j,:,:]
 	plt.imshow(a)
 	plt.show()
+
+	plt.ion()
+	for i in range(0, len(images)-4, 10):
+		plt.imshow(nfm.check_resp(images[i]))
+		plt.xlabel(str(i))
+		plt.pause(1)
+		plt.show()

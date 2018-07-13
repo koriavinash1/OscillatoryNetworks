@@ -116,9 +116,9 @@ class FreqAdaptiveCoupledNFM_D2D(object):
     def __init__(self, 
                 size=(10,10), 
                 exe_rad = 2,
-                inhb_rad = 4, 
-                exe_ampli = 2., 
-                inhb_ampli = 1, 
+                inhb_rad = 10, 
+                exe_ampli = 20., 
+                inhb_ampli = 10., 
                 test=False):
 
         self.eRad  = exe_rad
@@ -132,6 +132,8 @@ class FreqAdaptiveCoupledNFM_D2D(object):
         self.W     = 0.05*abs(np.random.randn(size[0], size[1]))
         if not test:
             self.Waff  = abs(np.random.randn(size[0], size[1], size[0], size[1]))
+            self.Waff = self.Normalize(self.Waff)
+            
             # self.Waff  = np.load('./SOM_weights.npy').reshape(10,10,10,10)
             # np.random.shuffle(self.Waff)
         else:
@@ -159,7 +161,7 @@ class FreqAdaptiveCoupledNFM_D2D(object):
     def Normalize(self, mat, type_='L1'):
         " "
         if type_ == 'L1':
-            mat = mat/ np.max(abs(mat))
+            mat = mat/ np.sum(mat)
         elif type_ == 'MinMax':
             mat = (mat - np.min(mat))/ (np.max(mat) - np.min(mat))
             # mat = np.tanh(mat)
@@ -213,14 +215,15 @@ class FreqAdaptiveCoupledNFM_D2D(object):
         """
 
         """
-        temp_aff = np.zeros_like(self.Z)
-        for m in range(self.Z.shape[0]):
-            for n in range(self.Z.shape[1]):
-                temp_aff[m,n] = np.sum(aff *self.Waff[m, n, :, :])
+        # temp_aff = np.zeros_like(self.Z)
+        # for m in range(self.Z.shape[0]):
+        #     for n in range(self.Z.shape[1]):
+        #         temp_aff[m,n] = np.sum(aff *self.Waff[m, n, :, :])
         
-        # temp_aff = np.sum(self.Waff.copy().dot(aff), axis=(2,3))
+        temp_aff = np.sum(self.Waff.copy()*(aff.reshape(1,1,10, 10)), axis=(2,3))
+        
         # temp_aff = temp_aff + self.Z
-        temp_aff = self.Normalize(temp_aff)
+        # temp_aff = self.Normalize(temp_aff)
         temp_aff = temp_aff if not np.isnan(temp_aff).any() else 0.0
 
 
@@ -232,12 +235,12 @@ class FreqAdaptiveCoupledNFM_D2D(object):
         
         # temp_lat = np.sum(self.Wlat.copy().dot(self.Z), axis=(2,3))
         temp_lat = temp_lat + self.Z 
-        temp_lat = self.Normalize(temp_lat)
+        # temp_lat = self.Normalize(temp_lat)
         temp_lat = temp_lat if not np.isnan(temp_lat).any() else 0.0
 
-        temp_aff = abs(0.1*temp_aff)
-        temp_lat = abs(0.01*temp_lat)
-        I = 0.03 + temp_lat  # + temp_aff
+        temp_aff = 0.1*temp_aff
+        temp_lat = 0.01*temp_lat
+        I = 0.03 + temp_lat + temp_aff
 
         v1 = self.Z
         w1 = self.W

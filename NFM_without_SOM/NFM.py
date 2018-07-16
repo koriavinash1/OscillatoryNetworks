@@ -11,6 +11,8 @@ import pdb
 # load Orientation Bars
 OrientationBars = np.load('./Orientation_bars.npy')
 print ("Orientation Bars Loaded: Shape {}".format(OrientationBars.shape))
+weights_path = './nfm_weights_4_LR0.05.npy'
+
 
 Gstat = GaussianStatistics()
 config= Config()
@@ -24,12 +26,12 @@ X, Y = np.meshgrid(X, Y)
 
 # dynamic to dynamic
 class NFM(object):
-	def __init__(self, ci=0.3, test=False):
+	def __init__(self, ci=0.3, test=None):
 		self.ci    = ci
-		self.ita   = 0.05 # 0.5
+		self.ita   = 5e-3
 		self.d2dnfm = FreqAdaptiveCoupledNFM_D2D(size=(config.N, config.N),
 						exe_rad = config.eRad,
-						inhb_rad = config.iRad, # for global inhabition
+						inhb_rad = config.N, # for global inhabition
 						exe_ampli = config.eA,
 						inhb_ampli = config.iA,
 						test = test)# self.phase is (T/dt, N, N) shape
@@ -97,9 +99,9 @@ class NFM(object):
 		# tensor numpy array
 		# print ("in instantanious phase calculation",tensor.shape)
 		assert len(tensor.shape) == 3
-		# if np.any(wt) != None:
-		# 	tensor = [np.sum(wt.copy().dot(tensor[i, :, :]), axis=(2,3)) for i in range(len(tensor))]
-		# 	tensor = np.array(tensor)
+		if np.any(wt) != None:
+			tensor = [np.sum(wt.copy().dot(tensor[i, :, :]), axis=(2,3)) for i in range(len(tensor))]
+			tensor = np.array(tensor)
 
 		phases, radius = np.zeros_like(tensor), np.zeros_like(tensor)
 		for ii in range(config.N):
@@ -108,7 +110,6 @@ class NFM(object):
 				phases[:, ii, jj] = np.angle(h)
 				radius[:, ii, jj] = np.abs(h)
 		return phases, radius
-
 
 	# weight update rule 
 	# https://link.springer.com/content/pdf/10.1007%2Fs11571-018-9489-x.pdf
@@ -127,21 +128,20 @@ class NFM(object):
 
 				relative_phase = abs(argI - arg)
 				
-				# for ll in range(arg.shape[1]):
-				# 	for kk in range(arg.shape[2]):
-				# 		ref_phase = abs(argI[:, ll, kk] - arg[:,0,0])
-				# 		# print (ref_phase.shape, argI.shape, arg.shape)
-				# 		if float(np.sum(abs(ref_phase) < 2))/len(ref_phase) > 0.90:
-				# 			ref_phase = np.zeros_like(ref_phase)
-				# 		relative_phase[:, ll, kk] = ref_phase
+				for ll in range(arg.shape[1]):
+					for kk in range(arg.shape[2]):
+						ref_phase = abs(argI[:, ll, kk] - arg[:,0,0])
+						# print (ref_phase.shape, argI.shape, arg.shape)
+						if float(np.sum(abs(ref_phase) < 2))/len(ref_phase) > 0.90:
+							ref_phase = np.zeros_like(ref_phase)
+						relative_phase[:, ll, kk] = ref_phase
 
 				# deltaw[ii, jj, :, :] = 1*self.ita*np.cos(np.mean(relative_phase, axis=0))
 				# deltaw[ii, jj, :, :] = 1*self.ita*np.mean(NFM*rI, axis=0)
+
 				temp = 1*self.ita*np.mean(NFM*rI*(1 + np.cos(relative_phase)), axis=0)
-				# print (np.max(np.cos(relative_phase)), np.min(np.cos(relative_phase)))
-				# temp[temp < 0.95*abs(np.max(temp))] = 0
-				# plt.imshow(rI[0, :, :])
-				# plt.show()
+
+
 				self.deltaw[ii, jj, :, :] = temp 
 				max_sheet[ii, jj] = np.max(temp)
 
@@ -151,9 +151,6 @@ class NFM(object):
 				if max_sheet[ii, jj] < 0.95*maxv:
 					self.deltaw[ii, jj, :, :] = np.zeros((10,10))
 
-		# Winning statistics..........
-		# mean = np.mean(deltaw, axis = 0)
-		# deltaw[deltaw < np.max(mean)] = 0
 		return self.deltaw
 
 	def deltaweights_xy(self, s2d, d2d):
@@ -191,14 +188,16 @@ class NFM(object):
 	def one_fit_D2D(self, image):
 		"fits one image at a time Train NFM end2end"
 		binary_image = image.copy()
-		binary_image[binary_image < 0.5] = -1.0
-		binary_image[binary_image > 0.5] = 1.0
+		binary_image[binary_image < 0.5] = -1.0*binary_image[binary_image < 0.5]
+		binary_image[binary_image > 0.5] = 1.0*binary_image[binary_image > 0.5]
 		self.bimage = binary_image
+
 		# plt.plot(np.sin((np.arange(0,5000)/100)*2*3.14*0.02))
 		# plt.show()
 
 		# convert static to dynamic input...
-		s2d_nsheets = [c*np.sin(np.arange(0,int(config.T/config.dt))*config.dt*2*3.14*0.01) for r in binary_image for c in r]
+		eps = 0
+		s2d_nsheets = [(c + eps)*np.sin(np.arange(0,int(config.T/config.dt))*config.dt*2*3.14*0.01) for r in binary_image for c in r]
 
 		s2d_nsheets = np.array(s2d_nsheets)
 		s2d_nsheets = s2d_nsheets.T.reshape(-1, config.N, config.N)
@@ -271,6 +270,8 @@ class NFM(object):
 		# 	plt.pause(0.005)
 		# 	plt.show()
 
+		phiI,   rI   = self.instantPhase(s2d_nsheets)
+
 
 		# tensor = [np.sum(self.d2dnfm.Waff.copy().dot(s2d_nsheets[i, :, :]), axis=(2,3)) for i in range(len(s2d_nsheets))]
 		# tensor = np.array(tensor)
@@ -313,8 +314,8 @@ class NFM(object):
 
 				_, _, _, _ = self.one_fit_D2D(images[jj])
 				self.d2dnfm.updateWeights(self.deltaw)
-				#if i % 4 == 3:
-				self.display_wts()
+				if i % 5 == 4:
+					self.display_wts()
 				a.append(np.mean(self.deltaw))
 			if i % 40 == 39:
 				self.save()
@@ -342,9 +343,9 @@ class NFM(object):
 		pass
 
 	def save(self):
-		np.save('./nfm_weights_4_LR0.05.npy', self.d2dnfm.Waff)
+		np.save(weights_path, self.d2dnfm.Waff)
 
-	def check_resp(self, image, aff_path = './nfm_weights_4.npy'):
+	def check_resp(self, image, aff_path = weights_path):
 		self.d2dnfm.loadWeights(path=aff_path)
 		resp = np.sum(self.d2dnfm.Waff*image.reshape(1,1,10,10), axis=(2,3))
 		# phase, _ = self.one_fit_D2D(image)
@@ -375,24 +376,17 @@ class NFM(object):
 
 
 if __name__ == '__main__':
-	nfm = NFM(test=False)
+	nfm = NFM(test=None)
 	images = OrientationBars.reshape(-1, 10, 10)
-	# np.random.shuffle(images)
-	# count = 1
-	# for i in range(0, 90, 1):
-	# 	pm = nfm.check_resp(images[i])
-	# 	pm[pm < 0.95*np.max(pm)] = 0
-	# 	plt.subplot(10, 9, count)
-	# 	plt.imshow(pm)
-	# 	count += 1
-	# plt.show()
+	print(np.max(images[0]), np.min(images[0]))
 
-	# nfm.fit_train_data(images, epochs = 10)
 
-	# nfm.response(images, simulations=4)
+	# nfm.fit_train_data(images, epochs = 80)
+
+	nfm.response(images, simulations=4)
 
 	# weights = np.load('./nfm_weights.npy').reshape(10,10,10,10)
-	weights = np.load('./nfm_weights_4.npy').reshape(10,10,10,10)
+	weights = np.load(weights_path).reshape(10,10,10,10)
 	a = np.empty((100,100))
 	for i in range(10):
 		for j in range(10):
@@ -400,9 +394,9 @@ if __name__ == '__main__':
 	plt.imshow(a)
 	plt.show()
 
-	plt.ion()
-	for i in range(0, len(images)-4, 10):
-		plt.imshow(nfm.check_resp(images[i]))
-		plt.xlabel(str(i))
-		plt.pause(1)
-		plt.show()
+	# plt.ion()
+	# for i in range(0, len(images)-4, 10):
+	# 	plt.imshow(nfm.check_resp(images[i]))
+	# 	plt.xlabel(str(i))
+	# 	plt.pause(1)
+	# 	plt.show()

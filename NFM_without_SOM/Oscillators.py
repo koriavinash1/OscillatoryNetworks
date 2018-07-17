@@ -11,6 +11,23 @@ import pdb
 Gstat = GaussianStatistics()
 config= Config()
 
+
+OrientationBars = np.load('./Orientation_bars.npy')
+images = OrientationBars.reshape(-1, 10, 10)
+twts = np.zeros((10, 10, 10, 10))
+for i in range(10):
+    for j in range(10):
+        ai = np.random.randint(0, 4)
+        twts[i, j, :, :] = images[ai*22]
+
+b = np.empty((100, 100))
+for i in range(10):
+    for j in range(10):
+        b[i*10:(i+1)*10, j*10:(j+1)*10] = twts[i,j,:,:]
+
+plt.imshow(b)
+plt.show()
+
 # NFM 2D implementation
 #========================================================================================
 # NFM S2D..................
@@ -123,9 +140,11 @@ class FreqAdaptiveCoupledNFM_D2D(object):
 
         self.eRad  = exe_rad
         self.iRad  = inhb_rad
+
         # gaussian statistics...
         self.eA  = exe_ampli
         self.iA  = inhb_ampli
+        
         # neural field parameters
         self.o     = 10*abs(np.random.randn(size[0], size[1]))
         self.Z     = 0.05*abs(np.random.randn(size[0], size[1]))
@@ -133,9 +152,10 @@ class FreqAdaptiveCoupledNFM_D2D(object):
         
 
         if test == None:
-            self.Waff  = abs(np.random.randn(size[0], size[1], size[0], size[1]))
-            self.Waff  = np.load('./SOM_weights.npy').reshape(10,10,10,10)
-            np.random.shuffle(self.Waff)
+            # self.Waff  = np.random.uniform(0, 1, (size[0], size[1], size[0], size[1]))
+            # self.Waff  = np.load('./SOM_weights.npy').reshape(10,10,10,10)
+            # np.random.shuffle(self.Waff)
+            self.Waff = twts
             
             for ii in range(10):
                 for jj in range(10):
@@ -191,7 +211,6 @@ class FreqAdaptiveCoupledNFM_D2D(object):
         """
 
         """
-        
         temp_aff = np.sum(self.Waff.copy()*(aff.reshape(1,1,10, 10)), axis=(2,3))
         temp_aff = temp_aff if not np.isnan(temp_aff).any() else 0.0
 
@@ -207,7 +226,7 @@ class FreqAdaptiveCoupledNFM_D2D(object):
 
 
         temp_aff = 0.1*temp_aff
-        temp_lat = 0.05*temp_lat
+        temp_lat = 0.025*temp_lat
         I = 0.03 + temp_lat + temp_aff
 
 

@@ -11,7 +11,7 @@ import pdb
 # load Orientation Bars
 OrientationBars = np.load('./Orientation_bars.npy')
 print ("Orientation Bars Loaded: Shape {}".format(OrientationBars.shape))
-weights_path = './nfm_weights_4_LR0.05.npy'
+weights_path = './nfm_weights_4_Lat0.025.npy'
 
 
 Gstat = GaussianStatistics()
@@ -28,7 +28,7 @@ X, Y = np.meshgrid(X, Y)
 class NFM(object):
 	def __init__(self, ci=0.3, test=None):
 		self.ci    = ci
-		self.ita   = 5e-3
+		self.ita   = 5e-4
 		self.d2dnfm = FreqAdaptiveCoupledNFM_D2D(size=(config.N, config.N),
 						exe_rad = config.eRad,
 						inhb_rad = config.N, # for global inhabition
@@ -314,7 +314,7 @@ class NFM(object):
 
 				_, _, _, _ = self.one_fit_D2D(images[jj])
 				self.d2dnfm.updateWeights(self.deltaw)
-				if i % 5 == 4:
+				if i % 40 == 39:
 					self.display_wts()
 				a.append(np.mean(self.deltaw))
 			if i % 40 == 39:
@@ -326,11 +326,12 @@ class NFM(object):
 	def response(self, images, simulations=0):
 		response_maps_per_simulations = np.zeros((4, 10, 10))
 		assert len(images.shape) == 3
+
 		for sim in tqdm(range(simulations)):
 			# response_maps = np.zeros((4, 10, 10))
 
 			for i, jj in enumerate(range(0, len(images)-4, len(images)//4)):
-				print jj
+
 				Iphs, NFMphs, IR, NFMR = self.one_fit_D2D(images[jj])
 				winning_stat = self.calculate_winning_statistics(Iphs, NFMphs, IR, NFMR)
 				# plt.imshow(winning_stat)
@@ -381,9 +382,9 @@ if __name__ == '__main__':
 	print(np.max(images[0]), np.min(images[0]))
 
 
-	# nfm.fit_train_data(images, epochs = 80)
+	nfm.fit_train_data(images, epochs = 80)
 
-	nfm.response(images, simulations=4)
+	# nfm.response(images, simulations=4)
 
 	# weights = np.load('./nfm_weights.npy').reshape(10,10,10,10)
 	weights = np.load(weights_path).reshape(10,10,10,10)
@@ -394,9 +395,9 @@ if __name__ == '__main__':
 	plt.imshow(a)
 	plt.show()
 
-	# plt.ion()
-	# for i in range(0, len(images)-4, 10):
-	# 	plt.imshow(nfm.check_resp(images[i]))
-	# 	plt.xlabel(str(i))
-	# 	plt.pause(1)
-	# 	plt.show()
+	plt.ion()
+	for i in range(0, len(images)-4, 22):
+		plt.imshow(nfm.check_resp(images[i]))
+		plt.xlabel(str(i))
+		plt.pause(1)
+		plt.show()

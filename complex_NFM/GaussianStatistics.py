@@ -8,6 +8,7 @@ from matplotlib.ticker import LinearLocator, FormatStrFormatter
 class GaussianStatistics():
     """
     """
+    
     def MultivariateGaussian(self, mu, sd, N = 10, A = 1):
         """
             mu: location of peak value
@@ -40,6 +41,7 @@ class GaussianStatistics():
 
         return A * np.exp(-fac / 2)
 
+
     def DOG(self, iRad, eRad, iA, eA):
         """
         """
@@ -53,6 +55,7 @@ class GaussianStatistics():
         self.pos = self.MultivariateGaussian(mu, eSd, N = 2*iRad, A = eA)
         self.neg = self.MultivariateGaussian(mu, iSd, N = 2*iRad, A = iA)
         return self.pos, self.neg
+
 
     def Visualize(self, Gaussian, _type = '2d'):
         """
@@ -75,6 +78,7 @@ class GaussianStatistics():
         else:
             plt.imshow(Gaussian)
             plt.show()
+
 
     def OrientationBar(self, N = 10,
                     mu=np.array([5., 5.]),

@@ -14,6 +14,7 @@ config= Config()
 
 OrientationBars = np.load('./Orientation_bars.npy')
 images = OrientationBars.reshape(-1, 10, 10)
+
 # twts = np.zeros((10, 10, 10, 10))
 # for i in range(10):
 #     for j in range(10):
@@ -65,7 +66,7 @@ class CoupledNFM(object):
                 # lateral weights
                 gauss1, gauss2   = Gstat.DOG(self.iRad, self.eRad, self.iA, self.eA)
                 # Gstat.Visualize(gauss1+gauss2, _type = '2d')
-                self.kernel= gauss1 - gauss2 + (gauss1 - gauss2)*1j
+                self.kernel= (gauss1 - gauss2) * np.exp((gauss1 - gauss2)*1j)
                 self.Wlattemp[i-self.iRad, j-self.iRad, i-self.iRad:i+self.iRad, j-self.iRad:j+self.iRad] = self.kernel
 
         for i in range(0, size[0]):
@@ -92,9 +93,10 @@ class CoupledNFM(object):
             mat = mat/ abs(np.sum(mat))
         elif type_ == 'MinMax':
             mat = (mat - np.min(mat))/ (np.max(mat) - np.min(mat))
-            # mat = np.tanh(mat)
         elif type_ == 'Zscore':
             mat = (mat - np.mean(mat))/ np.var(mat)**0.5
+        elif type_ == 'tanh':
+            mat = np.tanh(mat)
         else:
             raise ValueError("Invalid Type found")
         return mat
@@ -136,6 +138,9 @@ class CoupledNFM(object):
 
         v1 = v1 + vdot*config.dt
         w1 = w1 + wdot*config.dt
+
+        v1[np.isnan(v1)] = 0
+        w1[np.isnan(w1)] = 0
 
         self.Z = v1
         self.W = w1

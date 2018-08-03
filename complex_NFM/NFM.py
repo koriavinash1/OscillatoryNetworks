@@ -64,7 +64,7 @@ class NFM(object):
 		
 		s2d_nsheets = []
 		for i in range(0, int(config.T/config.dt)):
-			self.s2dnfm.lateralDynamics(verbose = True, ci = self.ci)
+			self.s2dnfm.lateralDynamics(aff = image,verbose = True, ci = self.ci)
 			s2d_nsheets.append(self.s2dnfm.Z)
 			if i %100 == 99:
 				fig2D = plt.figure('2D Mag')
@@ -81,7 +81,6 @@ if __name__ == '__main__':
 	nfm = NFM(test=None)
 	images = OrientationBars.reshape(-1, 10, 10)
 	print(np.max(images[0]), np.min(images[0]))
-
 
 	nfm.staticToDynamic(images[23, :, :])
 

@@ -44,6 +44,8 @@ class CoupledNFM(object):
                 inhb_ampli = 1., 
                 test       = None):
 
+        # ===================================================================
+        # init
         self.eRad = exe_rad
         self.iRad = inhb_rad
 
@@ -53,27 +55,24 @@ class CoupledNFM(object):
         
         # complex neural field parameters ...
         self.Z    = 0.05*np.random.randn(size[0], size[1]) + 0.05*np.random.randn(size[0], size[1])*1j
-        self.W    = 0.05*np.random.randn(size[0], size[1]) + 0.05*np.random.randn(size[0], size[1])*1j
-
+       
         # lateral connection defination ...
         self.Wlat     = np.zeros((size[0], size[1], size[0], size[1]), dtype='complex64')
         self.Wlattemp = np.zeros((size[0], size[1], size[0]+2*self.iRad, size[1]+2*self.iRad), dtype='complex64')
         
-
+        # ===================================================================
         # weight initialization with real and imaginary maxican hat
         for i in range(self.iRad, size[0]+self.iRad):
             for j in range(self.iRad, size[1]+self.iRad):
                 # lateral weights
                 gauss1, gauss2   = Gstat.DOG(self.iRad, self.eRad, self.iA, self.eA)
                 # Gstat.Visualize(gauss1+gauss2, _type = '2d')
-                self.kernel= (gauss1 - gauss2) * np.exp((gauss1 - gauss2)*1j)
+                self.kernel= (gauss1 - gauss2) #* np.exp(np.random.randn(20, 20)*1j)
                 self.Wlattemp[i-self.iRad, j-self.iRad, i-self.iRad:i+self.iRad, j-self.iRad:j+self.iRad] = self.kernel
 
         for i in range(0, size[0]):
             for j in range(0, size[1]):
                 self.Wlat[i,j,:,:] = self.Wlattemp[i,j,self.iRad:self.iRad + size[0], self.iRad:self.iRad + size[1]]
-
-        print ("MXH Before Normalization,  max lateral: ", np.max(self.Wlat), "  min lateral: ", np.min(self.Wlat))
         
         # normalization L1
         for ii in range(10):
@@ -83,14 +82,14 @@ class CoupledNFM(object):
                 self.Wlat[ii, jj, :, :]  = self.Normalize(self.Wlat[ii, jj, :, :])
         
         print ("MXH After normalization,  max lateral: ", np.max(self.Wlat), "  min lateral: ", np.min(self.Wlat))
-        pdb.set_trace()
+        
 
 
     def Normalize(self, mat, type_='L1'):
         "performs different types of normalization"
 
         if type_ == 'L1':
-            mat = mat/ abs(np.sum(mat))
+            mat = mat/ np.sum(np.abs(mat))
         elif type_ == 'MinMax':
             mat = (mat - np.min(mat))/ (np.max(mat) - np.min(mat))
         elif type_ == 'Zscore':
@@ -108,47 +107,35 @@ class CoupledNFM(object):
         temp_lat = np.zeros_like(self.Z)
         for m in range(self.Z.shape[0]):
             for n in range(self.Z.shape[1]):
-                temp_lat[m,n] = np.sum((self.Z - self.Z[m,n])*self.Wlat[m, n, :, :])
+                temp_lat[m,n] = np.sum((np.abs(self.Z) - np.abs(self.Z[m,n]))*self.Wlat[m, n, :, :])
         
         # high self weights ...
         temp_lat = temp_lat + self.Z
+        # temp_lat = np.sum(self.Z.reshape(self.Z.shape[0], self.Z.shape[1], 1, 1)*self.Wlat, axis=(2, 3))
         temp_lat = temp_lat if not np.isnan(temp_lat).any() else 0.0
-
         # temp_lat = self.Normalize(temp_lat)
-        temp_aff = 0.05*aff
-        temp_lat = 0.05*temp_lat
+
+        temp_aff = 0.002*aff
+        temp_lat = 0.002*temp_lat
         I = temp_lat + temp_aff
+        
+        a = 0.2 + 0.01j  # inc img part for depolarization 
+        b = 0.2 + 0.01j  # inc img part for depolarization
+        c = 0.01 + 1j 
 
-        v1 = self.Z
-        w1 = self.W
+        Z = self.Z
+        Zstar = np.conjugate(Z)
 
-        a     =  0.139
-        gamma = 2.54
-        eps   = 0.008
+        x = (Z + Zstar)/2.
+        y = (Z - Zstar)/2.
 
+        Zdot = a * Zstar + b* Z *1j + c * ((5.0/24.0)*Z + (1.0/8.0) * Zstar)*Z*Zstar + I
+        
+        Zdot[np.abs(Zdot) > 1e2] = 1. + 1.j
 
-        fv   = v1*(a - v1)*(v1 - 1)
-        vdot = (fv - w1 + I)/0.08
-        wdot = eps*(v1 - gamma*w1)
+        Z = Z + Zdot*config.dt
 
-        # fv   = v1*(v1+12)*(1.-v1)
-        # vdot = fv - w1 + 0.5*I
-        # wdot = omega*(v1 - 0.01*w1)
-
-
-        v1 = v1 + vdot*config.dt
-        w1 = w1 + wdot*config.dt
-
-        v1[np.isnan(v1)] = 0
-        w1[np.isnan(w1)] = 0
-
-        self.Z = v1
-        self.W = w1
-
-        if verbose:
-            print 'max lat.........: {}'.format(np.max(temp_lat)) + '  min lat.......: {}'.format(np.min(temp_lat))
-            print 'max aff.........: {}'.format(np.max(temp_aff)) + '  min lat.......: {}'.format(np.min(temp_aff))
-            print 'max I ....: {}'.format(np.max(I)) + '  min I....: {}'.format(np.min(I))
+        self.Z = Z
 
 
     def fanoFactor(self, sig):

@@ -4,11 +4,15 @@ matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 
 dt = 0.01
+T = 500
 
-a = 2 + 0.01j  # inc img part for depolarization 
-b = 2 + 0.01j  # inc img part for depolarization
-c = 0.01 + 1j  
-cp = 0.001 + 0.001j  
+omega = 0.002*np.pi/T
+phi = 10* np.pi/180.0
+
+a = 0.2 + 0.01j  # inc img part for depolarization 
+b = 0.2 + 0.01j  # inc img part for depolarization
+c = 0.05 + 0.05j  
+cp = -0.00 - 0.00j  
 
 
 
@@ -17,17 +21,20 @@ Z1, Z2 = 0.05 + 0.01j, 0.05 + 0.01j
 
 Z1s, Z2s = [], []
 
-for i in range(5000):
-	d1 = 0.01*np.exp((2*np.pi*5*0.0002*i )*1j) # i ext
-	d2 = 0.01*np.exp((2*np.pi*5*0.0002*i + np.pi/2)*1j) # i ext
+for i in range(int(T/dt)):
+	I1 = 0.005*np.exp(1j*omega*i) 
+	I2 = 0.005*np.exp(1j*(omega*i + phi))
+
+	# I2 = np.real(I1) + np.imag(I2)*1j
+
 	Z1s.append(Z1)
 	Z2s.append(Z2)
 
 	Z1star = np.conjugate(Z1)
 	Z2star = np.conjugate(Z2)
 
-	Z1dot = a * Z1star + b* Z1 *1j + c * ((5.0/24.0)*Z1 + (1.0/8.0) * Z1star)*Z1*Z1star + cp*(Z1 - Z2) + d1
-	Z2dot = a * Z2star + b* Z2 *1j + c * ((5.0/24.0)*Z2 + (1.0/8.0) * Z2star)*Z2*Z2star + cp*(Z2 - Z1) + d2
+	Z1dot = a * Z1star + b* Z1 *1j + c * ((5.0/24.0)*Z1)*Z1*Z1star + I1 + cp*(np.abs(Z2) - np.abs(Z1))
+	Z2dot = a * Z2star + b* Z2 *1j + c * ((5.0/24.0)*Z2)*Z2*Z2star + I2 + cp*(np.abs(Z1) - np.abs(Z2))
 	
 	Z1 = Z1 + Z1dot*dt
 	Z2 = Z2 + Z2dot*dt

@@ -64,17 +64,17 @@ class NFM(object):
 		
 		s2d_nsheets = []
 		for i in range(0, int(config.T/config.dt)):
-			self.s2dnfm.lateralDynamics(aff = image,verbose = True, ci = self.ci)
+			self.s2dnfm.lateralDynamics(verbose = True, ci = self.ci)
 			s2d_nsheets.append(self.s2dnfm.Z)
-			if i %100 == 99:
-				fig2D = plt.figure('2D Real')
-				self.display(np.real(self.s2dnfm.Z), i, fig2D)
-				fig3D = plt.figure('2D Imag')
-				self.display(np.imag(self.s2dnfm.Z), i, fig3D)
-				fig2D = plt.figure('2D Mag')
-				self.display(np.abs(self.s2dnfm.Z), i, fig2D)
-				fig3D = plt.figure('2D Phase')
-				self.display(np.angle(self.s2dnfm.Z), i, fig3D)
+			# if i %100 == 99:
+			# 	fig2D = plt.figure('2D Real')
+			# 	self.display(np.real(self.s2dnfm.Z), i, fig2D)
+			# 	fig3D = plt.figure('2D Imag')
+			# 	self.display(np.imag(self.s2dnfm.Z), i, fig3D)
+			# 	fig2D = plt.figure('2D Mag')
+			# 	self.display(np.abs(self.s2dnfm.Z), i, fig2D)
+			# 	fig3D = plt.figure('2D Phase')
+			# 	self.display(np.angle(self.s2dnfm.Z), i, fig3D)
 		return np.array(s2d_nsheets)
 
 
@@ -90,9 +90,11 @@ if __name__ == '__main__':
 	plt.ion()
 	for i in range(config.N):
 		for j in range(config.N):
+			plt.clf()
 			plt.plot(np.real(sheets[:, i, j]), np.imag(sheets[:, i, j]))
 			plt.plot(np.real(sheets[:, i, j])[0], np.imag(sheets[:, i, j])[0], '*r')
-			plt.pause(1)
+			plt.title("x :" + str(i) + "  y :" + str(j))
+			plt.pause(0.5)
 
 	# nfm.response(images, simulations=4)
 

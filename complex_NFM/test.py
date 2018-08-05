@@ -18,9 +18,6 @@ for i in range(5000):
 	Zs.append(Z)
 	Zstar = np.conjugate(Z)
 
-	x = (Z + Zstar)/2.
-	y = (Z - Zstar)/2.
-
 	Zdot = a * Zstar + b* Z *1j + c * ((5.0/24.0)*Z + (1.0/8.0) * Zstar)*Z*Zstar + d
 	
 	# if np.abs(Zdot) > 100: Zdot = 10 + 10j

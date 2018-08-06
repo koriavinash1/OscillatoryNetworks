@@ -3,50 +3,53 @@ import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt 
 
-theta = 45.*np.pi/180.
 
-wt1   = 1*np.array([np.sin(theta), np.cos(theta)])
-wt2   = 1*np.array([np.sin(theta), np.cos(theta)])
+for ii in range(0, 180, 5):
+	theta = ii*np.pi/180.
 
-
-a     =  0.139
-gamma = 2.54
-eps   = 0.008
-freq  = 0.08
-
-T     = 500
-dt    = 0.01
+	wt1   = np.array([np.cos(theta), -1*np.sin(theta)])
+	wt2   = np.array([np.cos(theta), -1*np.sin(theta)])
 
 
-v1, v2 = 0.05, 0.05
-u1, u2 = 0.05, 0.05
+	a     =  0.139
+	eps   = 0.008
+	gamma = 2.54
+	freq  = 0.08
+	T     = 500
+	dt    = 0.01
 
-phi = 90* np.pi/180.0
+	v1, v2 = 0.05, 0.0
+	u1, u2 = 0.05, 0.0
 
-v1s, v2s = [], []
+	phi = 90* np.pi/180.0
 
-for i in range(int(T/dt)):
-	v1s.append(v1)
-	v2s.append(v2)
-
-	I1 = 0.05 + 0.5*np.sin(0.1*np.pi*i/T) 
-	I2 = 0.05 + 0.5*np.sin(0.1*np.pi*i/T + phi)
+	v1s, v2s = [], []
 	
-	cp1 = wt1[0] * (v2 - v1) + wt1[1] * (v2 - u1)  
-	cp2 = wt2[0] * (v1 - v2) + wt2[1] * (v1 - u2)
+	plt.ion()
+	plt.clf()
+	for i in range(int(T/dt)):
+		v1s.append(v1)
+		v2s.append(v2)
 
-	v1dot = (v1*(a - v1)*(v1 - 1) - u1 + I1 - cp1)/freq
-	u1dot = eps*(v1 - gamma*u1)
+		I1 = 0.05 # + 0.5*np.sin(0.1*np.pi*i/T) 
+		I2 = 0.05 # + 0.5*np.sin(0.1*np.pi*i/T + phi)
+		
+		cp1 = 0.1*(wt1[0] * (v2 - v1) * wt1[1])
+		cp2 = 0.1*(wt2[0] * (v1 - v2) * wt2[1])
 
-	v2dot = (v2*(a - v2)*(v2 - 1) - u2 + I2 - cp2)/freq
-	u2dot = eps*(v2 - gamma*u2)
+		v1dot = (v1*(a - v1)*(v1 - 1) - u1 + I1 + cp1)/freq
+		u1dot = eps*(v1 - gamma*u1)
 
-	v1 = v1 + v1dot*dt
-	u1 = u1 + u1dot*dt
-	
-	v2 = v2 + v2dot*dt
-	u2 = u2 + u2dot*dt
+		v2dot = (v2*(a - v2)*(v2 - 1) - u2 + I2 + cp2)/(freq*2)
+		u2dot = eps*(v2 - gamma*u2)
 
-plt.plot(v1s)
-plt.plot(v2s)
-plt.show()
+		v1 = v1 + v1dot*dt
+		u1 = u1 + u1dot*dt
+		
+		v2 = v2 + v2dot*dt
+		u2 = u2 + u2dot*dt
+
+	plt.plot(v1s)
+	plt.title(str(ii))
+	plt.plot(v2s)
+	plt.pause(0.5)

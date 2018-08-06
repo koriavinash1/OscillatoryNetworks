@@ -9,10 +9,10 @@ T = 500
 omega = 0.002*np.pi/T
 phi = 10* np.pi/180.0
 
-a = 0.2 + 0.01j  # inc img part for depolarization 
-b = 0.2 + 0.01j  # inc img part for depolarization
+a = 0.5 + 0.008j  # inc img part for depolarization 
+b = 0.5 + 0.008j  # inc img part for depolarization
 c = 0.05 + 0.05j  
-cp = -0.00 - 0.00j  
+cp = 0*(+0.01 + 0.01j  )
 
 
 
@@ -33,8 +33,8 @@ for i in range(int(T/dt)):
 	Z1star = np.conjugate(Z1)
 	Z2star = np.conjugate(Z2)
 
-	Z1dot = a * Z1star + b* Z1 *1j + c * ((5.0/24.0)*Z1)*Z1*Z1star + I1 + cp*(np.abs(Z2) - np.abs(Z1))
-	Z2dot = a * Z2star + b* Z2 *1j + c * ((5.0/24.0)*Z2)*Z2*Z2star + I2 + cp*(np.abs(Z1) - np.abs(Z2))
+	Z1dot = a * Z1star + b* Z1 *1j + c * ((5.0/24.0)*Z1)*Z1*Z1star + I1 + cp*np.sin(np.angle(Z2) - np.angle(Z1))
+	Z2dot = a * Z2star + b* Z2 *1j + c * ((5.0/24.0)*Z2)*Z2*Z2star + I2 + cp*np.sin(np.angle(Z1) - np.angle(Z2))
 	
 	Z1 = Z1 + Z1dot*dt
 	Z2 = Z2 + Z2dot*dt

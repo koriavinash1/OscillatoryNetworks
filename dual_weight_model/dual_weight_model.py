@@ -15,7 +15,7 @@ for ii in range(0, 180, 5):
 	b     = 0.1
 	gamma = 0.1
 	freq  = 0.1
-	T     = 500
+	T     = 50
 	dt    = 0.01
 
 	v1, v2 = np.random.randn(), np.random.randn()
@@ -40,7 +40,7 @@ for ii in range(0, 180, 5):
 		v1dot = (v1*(a - v1)*(v1 - 1) - u1 + I1 + cp1)/freq
 		u1dot = b*v1 - gamma*u1
 
-		v2dot = (v2*(a - v2)*(v2 - 1) - u2 + I2 + cp2)/(freq*2)
+		v2dot = (v2*(a - v2)*(v2 - 1) - u2 + I2 + cp2)/(freq)
 		u2dot = b*v2 - gamma*u2
 
 		v1 = v1 + v1dot*dt

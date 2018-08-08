@@ -9,7 +9,7 @@ theta = 90*np.pi/180.
 np.random.seed(218)
 wt   = np.random.randn(2)
 
-def update_weights(v, w, phi = 180):
+def update_weights(v, w, phi = 0):
 
 	phi = phi * np.pi/180.0
 	assert len(v) == len(w)
@@ -65,7 +65,10 @@ for ii in range(25):
 		wt = update_weights(np.array([v1, v2]), wt)
 		wt = wt/np.sum(np.abs(wt))
 
+	ph1 = np.mean(np.unwrap(np.angle(hilbert(v1s))))*180./np.pi
+	ph2 = np.mean(np.unwrap(np.angle(hilbert(v2s))))*180./np.pi
+
 	plt.plot(v1s)
 	plt.plot(v2s)
-	plt.title("Epoch: {}".format(ii))# + " Estimated phase: {}".format(np.mean(np.angle(hilbert(v1s)) - np.mean(np.angle(hilbert(v2s))))*180./np.pi))
+	plt.title("Epoch: {}".format(ii) + " Estimated phase difference: {}".format(abs(ph1 - ph2)))
 	plt.pause(0.5)

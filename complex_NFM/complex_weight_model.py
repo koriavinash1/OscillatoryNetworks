@@ -7,65 +7,64 @@ dt = 0.01
 T = 50
 
 omega = 0.002*np.pi/T
-phi = 180.* np.pi/180.0
+phi = 90.* np.pi/180.0
+c = -0.1 - 10j  
 
-a = 0.02 + 0.01j  # inc img part for depolarization 
-b = a
-ita =1e-4
-c = 0.01 + 1j  
+ita =1e-3
+
+
 np.random.seed(2018)
-cp1 = 0.01 *(+0.01*np.random.randn() + np.random.randn()*0.01j )
-cp2 = 0.01 *(+0.01*np.random.randn() + np.random.randn()*0.01j )
-Z1, Z2 = 0.05*np.random.randn() + np.random.randn()*0.01j, 0.05*np.random.randn() + np.random.randn()*0.01j
+cp1 = (+0.01*np.random.randn() + np.random.randn()*0.01j )
+cp2 = (+0.01*np.random.randn() + np.random.randn()*0.01j )
+
 
 def weight_update(Z1, Z2, w, phi = phi):
-	# dw = ita *(Z1*np.conjugate(Z2) + Z2*np.conjugate(Z1) - 1)
-	dw = ita *(np.abs(Z1) * np.abs(Z2) * (1 + np.array([np.cos(np.angle(Z1) - np.angle(Z2) + phi), np.sin(np.angle(Z2) - np.angle(Z1) + phi)]))) + 0j
+	dw = ita *(Z1*np.conjugate(Z2) + Z2*np.conjugate(Z1) + 1+1j)
 	w  = w + dw
-
 	return w / np.abs(w), dw
 
 # np.random.seed(2018)
 # Z1 = Z2
+# np.random.seed(2018)
+Z1, Z2 = (0.05 + 0.01j), (0.05 + 0.01j)
 
 dws = []	
 for ep in range(50):
 	Z1s, Z2s = [], []
 	plt.ion()
 	plt.clf()
+	
 	for i in range(int(T/dt)):
 		
 		Z1star = np.conjugate(Z1)
 		Z2star = np.conjugate(Z2)
 
 		if ep < 30:
-			I1 = 0.05 + 0.01*np.sin(omega*i) + 0j  + np.conjugate(cp1)*(Z2 * Z1star -1)# constant < 0.18
-			I2 = 0.05 + 0.01*np.sin(omega*i + phi) + 0j + np.conjugate(cp2)*(Z1 * Z2star -1)
+			I1 = 0.002 + (0.001*np.sin(omega*i)) #+ 0.001*(cp1)*(Z2 - Z1)#/(np.abs(Z1)*np.abs(Z2))
+			I2 = 0.002 + (0.001*np.sin(omega*i + phi)) #+ 0.001*(cp2)*(Z1 - Z2)#/(np.abs(Z1)*np.abs(Z2))
 		else:
-			I1 = 0.15 + np.conjugate(cp1)*(Z2 * Z1star - 1)
-			I2 = 0.15 + np.conjugate(cp2)*(Z1 * Z2star - 1)
+			I1 = 0.001 + 0.001*(cp1)*(Z2 - Z1)#/(np.abs(Z1)*np.abs(Z2))
+			I2 = 0.001 + 0.001*(cp2)*(Z1 - Z2)#/(np.abs(Z1)*np.abs(Z2))
 
-		# if i % 500 == 499:
-			# exit()
-			# print ("I1 : {}".format(np.abs(I1)) + "  I2 : {}".format(np.abs(I2)) + "  CP1 : {}".format(np.abs(cp1)) +"  CP2 : {}".format(np.abs(cp2)))
-		# print (Z1, Z2, Z1star, Z2star)
-		# I2 = np.real(I1) + np.imag(I2)*1j
+		# if i % 100 == 99:
+		# 	exit()
+		print ("sinI1: {}".format(np.sin(omega*i + phi)) + "  I1 : {}".format(np.abs(I1)) + "  I2 : {}".format(np.abs(I2)) + "  CP1 : {}".format(np.abs(cp1)) +"  CP2 : {}".format(np.abs(cp2)))
 
 		Z1s.append(Z1)
 		Z2s.append(Z2)
 
-		Z1dot = a * Z1star - b* Z1 *1j + c * ((5.0/24.0)*Z1)*Z1*Z1star + I1  
-		Z2dot = a * Z2star - b* Z2 *1j + c * ((5.0/24.0)*Z2)*Z2*Z2star + I2 
-		
+		Z1dot = Z1star + Z1 *1j + c*Z1*Z1*Z1star - I1  
+		Z2dot = Z2star + Z2 *1j + c*Z2*Z2*Z2star - I2 
+
 		Z1 = Z1 + Z1dot*dt
 		Z2 = Z2 + Z2dot*dt
 
-		# Z1 = Z1/np.abs(Z1)
-		# Z2 = Z2/np.abs(Z2)
+		# if np.abs(Z1dot) > 100: Z1dot = 1.0 + 1.0j
+		# if np.abs(Z2dot) > 100: Z2dot = 1.0 + 1.0j
 		
 		if ep < 30:
 			cp1, dw = weight_update(Z1, Z2, cp1) 
-			cp2, _ = weight_update(Z2, Z1, cp2) 
+			cp2, _  = weight_update(Z2, Z1, cp2) 
 
 		dws.append(dw)
 

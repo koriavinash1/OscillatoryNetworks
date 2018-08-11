@@ -9,7 +9,7 @@ theta = 90*np.pi/180.
 np.random.seed(218)
 wt   = np.random.randn(2)
 
-def update_weights(v, w, phi = 0):
+def update_weights(v, w, phi = 90.):
 
 	phi = phi * np.pi/180.0
 	assert len(v) == len(w)

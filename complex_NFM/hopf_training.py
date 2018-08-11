@@ -20,7 +20,7 @@ cp2 = (np.random.randn() + np.random.randn()*1j )
 
 
 def weight_update(Z1, Z2, w, phi = phi):
-	dw = ita *(Z1*np.conjugate(Z2) + 1 + 1j)# + np.abs(Z1) * np.abs(Z2) *(1 + 1j))
+	dw = ita *(np.abs(Z1*Z2) + 0.5*(Z1*np.conjugate(Z2) + Z2*np.conjugate(Z1) ))# + np.abs(Z1) * np.abs(Z2) *(1 + 1j))
 	w  = w + dw
 	return w, dw
 
@@ -37,19 +37,21 @@ for ep in range(50):
 		Z1star = np.conjugate(Z1)
 		Z2star = np.conjugate(Z2)
 
-
 		if ep < train_epoch:
-			I1 = 0.1 + 0.1*np.sin(omega*i)
-			I2 = 0.1 + 0.1*np.sin(omega*i + phi)
+			F1 = np.sin(omega*i)
+			F2 = np.sin(omega*i + phi)
 		else:
 			I1 = 0.1 + 0.1*np.sin(omega*i)
 			I2 = 0.1
 
+		cp1 = 
+		cp2 = 
+
 		Z1s.append(Z1)
 		Z2s.append(Z2)
 
-		Z1dot = Z1star + Z1 *1j + c*Z1*Z1*Z1star + I1 + (np.real(cp1)*np.real(Z2)  - np.real(cp2)*np.real(Z1))
-		Z2dot = Z2star + Z2 *1j + c*Z2*Z2*Z2star + I2 + (-np.real(cp1)*np.real(Z2) + np.real(cp2)*np.real(Z1))
+		Z1dot = Zdot = Z + (np.pi/6.)*Z *1j - Z*Z*Zstar + 0.4*F1 + cp1
+		Z2dot = Zdot = Z + (np.pi/6.)*Z *1j - Z*Z*Zstar + 0.4*F2 + cp2
 
 		Z1 = Z1 + Z1dot*dt
 		Z2 = Z2 + Z2dot*dt

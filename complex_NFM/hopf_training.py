@@ -7,22 +7,22 @@ dt = 0.001
 T = 50
 
 omega = 0.002*np.pi/T
-phi = 0.* np.pi/180.0
-c = -0.1 - 10j  
+phi = 90.* np.pi/180.0
 train_epoch = 30
 
-ita =1e-1
+ita =1e-3
 
 
 np.random.seed(2018)
-cp1 = (np.random.randn() + np.random.randn()*1j )
-cp2 = (np.random.randn() + np.random.randn()*1j )
+c1 = np.random.randn()
+c2 = np.random.randn()
 
 
 def weight_update(Z1, Z2, w, phi = phi):
-	dw = ita *(np.abs(Z1*Z2) + 0.5*(Z1*np.conjugate(Z2) + Z2*np.conjugate(Z1) ))# + np.abs(Z1) * np.abs(Z2) *(1 + 1j))
+	p  = np.exp(-1j*phi)
+	dw = ita *(np.abs(Z1*Z2) + 0.5*(Z1*np.conjugate(Z2)*p + np.conjugate(p)*Z2*np.conjugate(Z1)))# + np.abs(Z1) * np.abs(Z2) *(1 + 1j))
 	w  = w + dw
-	return w, dw
+	return np.real(w), dw
 
 dws = []	
 for ep in range(50):
@@ -30,7 +30,7 @@ for ep in range(50):
 	plt.ion()
 	
 	np.random.seed(2018)
-	Z1, Z2 = (0.01*np.random.randn() + np.random.randn()*0.01j), (0.01*np.random.randn() + np.random.randn()*0.01j)
+	Z1, Z2 = (0.1*np.random.randn() + np.random.randn()*0.1j), (0.1*np.random.randn() + np.random.randn()*0.1j)
 
 	for i in range(int(T/dt)):
 		
@@ -41,27 +41,27 @@ for ep in range(50):
 			F1 = np.sin(omega*i)
 			F2 = np.sin(omega*i + phi)
 		else:
-			I1 = 0.1 + 0.1*np.sin(omega*i)
-			I2 = 0.1
+			F1 = np.sin(omega*i)
+			F2 = 0.
 
-		cp1 = 
-		cp2 = 
+		cp1 = c1*Z2 - c2*Z1*1j
+		cp2 = c2*Z1 - c1*Z2*1j
 
 		Z1s.append(Z1)
 		Z2s.append(Z2)
 
-		Z1dot = Zdot = Z + (np.pi/6.)*Z *1j - Z*Z*Zstar + 0.4*F1 + cp1
-		Z2dot = Zdot = Z + (np.pi/6.)*Z *1j - Z*Z*Zstar + 0.4*F2 + cp2
+		Z1dot = Z1 + 0.1*(np.pi/6.)*Z1 *1j - Z1*Z1*Z1star + 0.01*F1 + 0.01*cp1
+		Z2dot = Z2 + 0.1*(np.pi/6.)*Z2 *1j - Z2*Z2*Z2star + 0.01*F2 + 0.01*cp2
 
 		Z1 = Z1 + Z1dot*dt
 		Z2 = Z2 + Z2dot*dt
 		
 		if ep < train_epoch:
-			cp1, dw = weight_update(Z1, Z2, cp1) 
-			cp2,  _ = weight_update(Z2, Z1, cp2)
+			c1, dw = weight_update(Z1, Z2, cp1) 
+			c2,  _ = weight_update(Z2, Z1, cp2)
 
-			cp1     = cp1 / (np.abs(cp1) + np.abs(cp2))
-			cp2     = cp2 / (np.abs(cp1) + np.abs(cp2))
+			c1     = c1 /(c1+c2)
+			c2     = c2 /(c1+c2)
 
 		dws.append(dw)
 
@@ -76,8 +76,8 @@ for ep in range(50):
 
 	plt.figure('Real')
 	plt.clf()
-	plt.plot(np.abs(Z1s))
-	plt.plot(np.abs(Z2s))
+	plt.plot(np.real(Z1s))
+	plt.plot(np.real(Z2s))
 
 	plt.figure('dw')
 	plt.clf()

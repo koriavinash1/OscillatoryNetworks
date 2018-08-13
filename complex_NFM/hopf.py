@@ -20,7 +20,7 @@ for i in range(500000):
 	Zstar = np.conjugate(Z)
 	F = np.sin(omega*i)
 
-	Zdot = Z + 100*(np.pi/6.)*Z *1j - Z*Z*Zstar + 100*F 
+	Zdot = Z + 1*(np.pi/6.)*Z *1j - Z*Z*Zstar + 0.001*F 
 	
 	# if np.abs(Zdot) > 100: Zdot = 10 + 10j
 	# Zdot = (c/fr) + x*((-1*a /fr) + eps*1j) - y*(1./fr + eps*gamma) + (x**2 / fr) * (a + 1) + x**3 / fr 

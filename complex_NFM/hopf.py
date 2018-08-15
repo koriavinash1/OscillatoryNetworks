@@ -18,7 +18,7 @@ omega = 0.002*np.pi/500
 for i in range(5000):
 	Zs.append(Z)
 	Zstar = np.conjugate(Z)
-	F = np.sin(omega*i)
+	F = 0.01#np.sin(omega*i)
 
 	Zdot = Z + 1*(np.pi/6.)*Z *1j - Z*Z*Zstar + .001*F 
 	

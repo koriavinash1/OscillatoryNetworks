@@ -4,7 +4,6 @@ matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt 
 from scipy.signal import hilbert
 
-theta = 90*np.pi/180.
 
 np.random.seed(218)
 wt   = np.random.randn(2)
@@ -32,7 +31,7 @@ dt    = 0.01
 v1, v2 = np.random.randn(), np.random.randn()
 u1, u2 = 0.0, 0.0
 
-phi = 90 * np.pi/180.0
+phi = 0 * np.pi/180.0
 
 
 

@@ -40,8 +40,8 @@ for ep in range(epochs):
 		Z1s.append(Z1)
 		Z2s.append(Z2)
 
-		cp1 = cf * (np.real(c1) *np.real(Z2) - np.imag(c1)*np.imag(Z1))
-		cp2 = cf * (np.imag(c1) *np.imag(Z2) - np.real(c1)*np.real(Z1))
+		cp1 = cf * (np.real(c1) *np.real(Z2) - np.imag(c1)*np.real(Z1))
+		cp2 = cf * (np.imag(c1) *np.real(Z2) - np.real(c1)*np.real(Z1))
 
 		# print (c1, cp1, cp2, Z1, Z2)
 		# if i == 100: exit()

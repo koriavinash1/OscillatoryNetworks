@@ -10,7 +10,7 @@ rand = lambda x: np.random.randn(x)
 conj = lambda x: np.conjugate(x)
 
 omega = 2.*np.pi/ 25
-phi = 90.*np.pi/180.
+phi = 37.5*np.pi/180.
 mu  = 1
 eps = 1
 dws = []
@@ -45,8 +45,6 @@ for ep in range(epochs):
 		cp1 = cf * c1*Z2
 		cp2 = cf * np.conjugate(c1)*Z1
 
-		# print (c1, cp1, cp2, Z1, Z2)
-		# if i == 100: exit()
 
 		Z1dot = Z1*(mu - np.abs(Z1)**2) + omega*Z1 *1j + eps*F1 + cp1
 		Z2dot = Z2*(mu - np.abs(Z2)**2) + omega*Z2 *1j + eps*F2 + cp2
@@ -57,7 +55,7 @@ for ep in range(epochs):
 		# deltaw = ita*(np.exp(1j*phi)*Z1*np.conjugate(Z2) + (1 + 1j)*np.abs(Z1*Z2))
 		# deltaw = ita*(np.exp(1j*phi)*Z1*np.conjugate(Z2)/(np.abs(Z1*Z2)) - (1 + 1j))
 		# deltaw = ita*np.abs(np.angle(Z1) - np.angle(Z2))
-		deltaw = ita*(Z1*np.conjugate(Z2) - c1) 
+		deltaw = ita*(Z2*np.conjugate(Z1) - c1) 
 
 		deltaw = deltaw if ep <= train_epochs else (0. + 0.j)
 		dws.append(deltaw)

@@ -22,18 +22,19 @@ freq  = 0.1
 
 
 ita   = 1e-4
-cf    = 0.005
-cfu    = 0.005
+cf    = 0.05
+cfu    = 0.05
 
 
 T     = 50
 dt    = 0.01
-phi   = 180 * np.pi/180.0
+phi   = 30 * np.pi/180.0
 
-epochs = 100
-train_epochs = 80
+epochs = 1000
+train_epochs = 1000
 
 dws = []
+angle = []
 
 for ep in range(epochs):
 	v1s, v2s = [], []
@@ -50,10 +51,10 @@ for ep in range(epochs):
 		I1 = 0.5*np.cos((2.*np.pi * 6/float(T/dt))*i)
 		I2 = 0.5*np.cos((2.*np.pi * 6/float(T/dt))*i + phi)
 
-		if ep > train_epochs: 
-			I2 = I1 = 0.5
-			cf  = 0.05
-			cfu = 0.05
+		if ep > train_epochs:
+			print (cf*cpv1, cf*cpv2)
+			I2 = I1 = 0.5 #*np.cos((2.*np.pi * 6/float(T/dt))*i)
+			cf = cfu = 0.05
 
 		cpv1 = wt[0]*v2 - wt[1]*u2
 		cpu1 = wt[1]*v2 + wt[0]*u2
@@ -75,8 +76,9 @@ for ep in range(epochs):
 
 		if ep < train_epochs:
 			wt, dw = update_weights(v1 + u1*1j, v2 + u2*1j, wt[0] + 1j*wt[1])
-			wt     = wt/np.sum(np.abs(wt))
+			wt     = wt/np.max(np.abs(wt))
 
+		angle.append(180./np.pi *np.arctan2(wt[1], wt[0])) 
 		dws.append(dw)
 
 	ph1 = np.mean(np.unwrap(np.angle(hilbert(v1s[3000:]))))*180./np.pi
@@ -86,7 +88,7 @@ for ep in range(epochs):
 	plt.figure('v')
 	plt.clf()
 	plt.plot(v1s)
-	plt.plot(v2s)
+	plt.plot(np.array(v2s))
 	plt.title("Epoch: {}".format(ep) + " Estimated phase difference: {}".format(abs(ph1 - ph2)))
 	
 	plt.figure('dw')
@@ -96,4 +98,8 @@ for ep in range(epochs):
 	plt.figure('dw2')
 	plt.clf()
 	plt.plot(np.array(dws)[:,1])
+	
+	plt.figure('ang')
+	plt.clf()
+	plt.plot(np.array(angle))
 	plt.pause(0.5)

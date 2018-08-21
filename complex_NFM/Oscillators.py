@@ -57,29 +57,25 @@ class CoupledNFM(object):
         self.Z    = 0.05*np.random.randn(size[0], size[1]) + 0.05*np.random.randn(size[0], size[1])*1j
        
         # lateral connection defination ...
-        self.Wlat     = np.zeros((size[0], size[1], size[0], size[1]), dtype='complex64')
-        self.Wlattemp = np.zeros((size[0], size[1], size[0]+2*self.iRad, size[1]+2*self.iRad), dtype='complex64')
+        self.cf      = np.zeros((size[0], size[1], size[0], size[1]), dtype='float64')
+        self.cftemp  = np.zeros((size[0], size[1], size[0]+2*self.iRad, size[1]+2*self.iRad), dtype='float64')
+
+        self.Wlat = 0.005*(np.random.randn(size[0], size[1], size[0], size[1]) +\
+                               np.random.randn(size[0], size[1], size[0], size[1]))*1j
         
         # ===================================================================
-        # weight initialization with real and imaginary maxican hat
+
         for i in range(self.iRad, size[0]+self.iRad):
             for j in range(self.iRad, size[1]+self.iRad):
                 # lateral weights
-                gauss1, gauss2   = Gstat.DOG(self.iRad, self.eRad, self.iA, self.eA)
-                # Gstat.Visualize(gauss1+gauss2, _type = '2d')
-                self.kernel= (gauss1 - gauss2) * np.exp(( - gauss1 + gauss2)*1j)
-                self.Wlattemp[i-self.iRad, j-self.iRad, i-self.iRad:i+self.iRad, j-self.iRad:j+self.iRad] = self.kernel
+                gauss1, _   = Gstat.DOG(self.iRad, self.eRad, self.iA, self.eA)
+                self.kernel = gauss1
+                self.cftemp[i-self.iRad, j-self.iRad, i-self.iRad:i+self.iRad, j-self.iRad:j+self.iRad] = self.kernel
 
         for i in range(0, size[0]):
             for j in range(0, size[1]):
-                self.Wlat[i,j,:,:] = self.Wlattemp[i,j,self.iRad:self.iRad + size[0], self.iRad:self.iRad + size[1]]
-        
-        # normalization L1
-        for ii in range(10):
-            for jj in range(10):
-                # plt.imshow(self.Wlat[ii,jj,:,:])
-                # plt.show()
-                self.Wlat[ii, jj, :, :]  = self.Normalize(self.Wlat[ii, jj, :, :])
+                self.cf[i,j,:,:] = self.cftemp[i,j,self.iRad:self.iRad + size[0], self.iRad:self.iRad + size[1]]
+
         
         print ("MXH After normalization,  max lateral: ", np.max(self.Wlat), "  min lateral: ", np.min(self.Wlat))
         
@@ -100,42 +96,34 @@ class CoupledNFM(object):
             raise ValueError("Invalid Type found")
         return mat
 
+    def updateLatWeights(self):
+        deltaw = (np.zeros((size[0], size[1], size[0], size[1])) +\
+                        np.zeros((size[0], size[1], size[0], size[1])))*1j
+        for i in range(self.Z.shape[0]):
+            for j in range(self.Z.shape[1]):
+                deltaw[i, j] = config.ita*(self.Z[i,j]*np.conjugate(self.Z) - self.Wlat[i, j])
 
-    def lateralDynamics(self, aff = 2+2j, verbose = True, ci=config.ci):
+        self.Wlat += deltaw 
+        self.Wlat = self.Normalize(self.Wlat)
+        
+        pass
+
+
+    def lateralDynamics(self, aff = 2+2j):
         "Dynamics of NFM sheet..."
-        aff = np.zeros((10,10)) + 1j*np.zeros((10,10)) + 0.1 + 0.1j
-        aff[3,3] = 1 + 1j
-        # temp_lat = np.zeros_like(self.Z)
-        # for m in range(self.Z.shape[0]):
-        #     for n in range(self.Z.shape[1]):
-        #         temp_lat[m,n] = np.sum((np.angl(self.Z) - np.angle(self.Z[m,n]))*self.Wlat[m, n, :, :])
-        
-        # high self weights ...
-        # temp_lat = temp_lat + np.real(self.Z)
-        temp_lat = np.sum(self.Z.reshape(self.Z.shape[0], self.Z.shape[1], 1, 1)*self.Wlat, axis=(2, 3))
-        temp_lat = temp_lat if not np.isnan(temp_lat).any() else 0.0
-        # temp_lat = self.Normalize(temp_lat)
+        temp_lat = np.zeros(self.Z.shape[0], self.Z.shape[1])
 
-        temp_aff = 0.5*aff
-        temp_lat = 0.05*temp_lat
-        I = temp_lat + temp_aff
-        
-        a = 0.2 + 0.01j  # inc img part for depolarization 
-        c = 0.01 + 1j 
+        for i in range(self.Z.shape[0]):
+            for j in range(self.Z.shape[1]):
+                temp_lat[i, j] = np.mean(self.Z*np.conjugate(self.Wlat[i,j]) - self.Z[i,j]*(np.conjugate(self.Wlat[i,j]) + self.Wlat[i,j]))
 
-        Z = self.Z
-        Zstar = np.conjugate(Z)
+        omega = 2.*np.pi/ 25    
+        phi = 37.5*np.pi/180.
+        mu  = 1
+        eps = 1
 
-        x = (Z + Zstar)/2.
-        y = (Z - Zstar)/2.
-
-        Zdot = a * Zstar + a * Z *1j + c * ((5.0/24.0)*Z + (1.0/8.0) * Zstar)*Z*Zstar + I
-        
-
-        Z = Z + Zdot*config.dt
-        # Z[np.abs(Z) > 1e1] = 1. + 1.j
-        
-        self.Z = Z
+        Zdot = Z*(mu - np.abs(Z)**2) + omega*Z *1j + eps*temp_aff + temp_lat
+        self.Z = self.Z + Zdot*config.dt
 
 
     def fanoFactor(self, sig):

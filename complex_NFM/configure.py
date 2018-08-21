@@ -38,6 +38,7 @@ class Config():
 	eRad = 2
 	iA   = 10
 	eA   = 20
+	ita  = 1e-3
 
 	# for orientation bar
 	mu  = np.array([5., 5.])

@@ -29,7 +29,7 @@ class NFM(object):
 	def __init__(self, ci=0.3, test=None):
 		self.ci    = ci
 		self.ita   = 5e-4
-		self.s2dnfm = CoupledNFM(size  =(config.N, config.N),
+		self.osciUnit = CoupledNFM(size  =(config.N, config.N),
 							exe_rad    = config.eRad,
 							inhb_rad   = config.N,
 							exe_ampli  = config.eA,
@@ -57,27 +57,15 @@ class NFM(object):
 		pass
 
 	# Statis input to dynamic output
-	def staticToDynamic(self, image):
-		"Statis to Dynamic needs one to one connections,\
-		Between static image and Oscillator"
-
-		
-		s2d_nsheets = []
+	def singleDynamics(self, image):
+		""
+		nsheets = []
 		for i in range(0, int(config.T/config.dt)):
-			self.s2dnfm.lateralDynamics(verbose = True, ci = self.ci)
-			s2d_nsheets.append(self.s2dnfm.Z)
-			# if i %100 == 99:
-			# 	fig2D = plt.figure('2D Real')
-			# 	self.display(np.real(self.s2dnfm.Z), i, fig2D)
-			# 	fig3D = plt.figure('2D Imag')
-			# 	self.display(np.imag(self.s2dnfm.Z), i, fig3D)
-			# 	fig2D = plt.figure('2D Mag')
-			# 	self.display(np.abs(self.s2dnfm.Z), i, fig2D)
-			# 	fig3D = plt.figure('2D Phase')
-			# 	self.display(np.angle(self.s2dnfm.Z), i, fig3D)
-		return np.array(s2d_nsheets)
+			self.osciUnit.lateralDynamics()
+			self.osciUnit.updateLatWeights()
+			nsheets.append(self.osciUnit.Z)
 
-
+		return np.array(nsheets)
 
 
 
@@ -86,7 +74,8 @@ if __name__ == '__main__':
 	images = OrientationBars.reshape(-1, 10, 10)
 	print(np.max(images[0]), np.min(images[0]))
 
-	sheets = nfm.staticToDynamic(images[23, :, :])
+	sheets = nfm.singleDynamics(images[23, :, :])
+	
 	plt.ion()
 	for i in range(config.N):
 		for j in range(config.N):

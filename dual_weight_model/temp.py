@@ -34,7 +34,7 @@ def update_weights(Z1, Z2, W):
 	return np.array([np.real(W),np.imag(W)]), np.array([np.real(deltaw), np.imag(deltaw)])
 
 def get_roots(I):
-	x = [np.abs(aa) for aa in np.roots([-1, (a+1), -(a+b/gamma), I]) if np.imag(aa) == 0.]
+	x = [np.abs(aa) for aa in np.roots([-1, (a+1), -(a+b/gamma), I]) if np.conjugate(aa) == aa]
 	return x[0], b/gamma * x[0]
 
 

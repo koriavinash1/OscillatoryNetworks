@@ -32,7 +32,7 @@ def perform_exp(phi, plot=True):
 	def update_weights(Z1, Z2, W):
 		Z10 = v10 + 1j * u10 
 		Z20 = v20 + 1j * u20 
-		deltaw = ita*((Z1*np.conjugate(Z2))**10 - W)
+		deltaw = ita*((Z1*np.conjugate(Z2)) - W)
 		W = W + deltaw
 		return np.array([np.real(W),np.imag(W)]), np.array([np.real(deltaw), np.imag(deltaw)])
 
@@ -140,4 +140,8 @@ ph_estph = np.array(ph_estph)
 
 plt.figure('Plot Final')
 plt.stem(ph_estph[:,0], ph_estph[:,1])
+plt.plot(ph_estph[:,0], ph_estph[:,0], 'r')
+plt.xlabel("given phase difference")
+plt.ylabel("lat. phase difference after training")
+plt.title("FHN")
 plt.show()

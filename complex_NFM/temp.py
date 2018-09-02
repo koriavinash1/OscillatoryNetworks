@@ -36,7 +36,7 @@ def perform_exp(phi, plot=True):
 	eps = 1
 	dws = []
 
-	ita = 1e-5
+	ita = 1e-3
 
 	c1 = 0.01 + 0.01j
 	cf = 0.01
@@ -122,7 +122,7 @@ def perform_exp(phi, plot=True):
 	return np.mean(np.array(estimated_ph))
 
 ph_estph = []
-for i in tqdm(range(50, 180, 5)):
+for i in tqdm(range(0, 180, 5)):
 	phi   = i * np.pi/180.0
 	est   = perform_exp(phi, False)
 	print ([phi * 180.0 / np.pi, est])

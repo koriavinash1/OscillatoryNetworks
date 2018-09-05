@@ -15,10 +15,10 @@ def perform_exp(phi, plot=True):
 
 	omega = 2.*np.pi/ 25
 	mu  = 4.0
-	eps = 10
+	eps = 1e-2
 	dws = []
 
-	ita = 1e-5
+	ita = 1e-3
 
 	c1 = 0.01 + 0.01j
 	cf = 0.01
@@ -42,8 +42,8 @@ def perform_exp(phi, plot=True):
 			F1 = np.cos((2.*np.pi * 4/float(T/dt))*i + phi)
 
 			if ep > train_epochs: 
-				F2 = F1 = 0.01
-				cf = 1
+				F2 = F1 = 1
+				cf = 0.01
 
 			Z1s.append(Z1)
 			Z2s.append(Z2)
@@ -51,8 +51,8 @@ def perform_exp(phi, plot=True):
 			cp1 = cf * c1 * Z2
 			cp2 = cf * np.conjugate(c1)*Z1
 
-			Z1dot = Z1 * mu/6. *(3. - np.abs(Z1)**2) + 1./mu * Z1 *1j + conj(Z1) * mu/6. *(9. - np.abs(Z1)**2) + 1./mu * conj(Z1)*1j + eps*F1 + cp1
-			Z2dot = Z2 * mu/6. *(3. - np.abs(Z2)**2) + 1./mu * Z2 *1j + conj(Z2) * mu/6. *(9. - np.abs(Z2)**2) + 1./mu * conj(Z2)*1j + eps*F2 + cp2
+			Z1dot = 0.6 * (Z1 * mu/6. *(3. - np.abs(Z1)**2) + 1./mu * Z1 *1j) + 0.4 * (conj(Z1) * mu/6. *(3. - np.abs(Z1)**2) + 1./mu * conj(Z1)*1j) + eps*F1 + cp1
+			Z2dot = 0.6 * (Z2 * mu/6. *(3. - np.abs(Z2)**2) + 1./mu * Z2 *1j) + 0.4 * (conj(Z2) * mu/6. *(3. - np.abs(Z2)**2) + 1./mu * conj(Z2)*1j) + eps*F2 + cp2
 
 			Z1 = Z1 + Z1dot*dt
 			Z2 = Z2 + Z2dot*dt
@@ -102,7 +102,7 @@ def perform_exp(phi, plot=True):
 	return np.mean(np.array(estimated_ph))
 
 ph_estph = []
-for i in tqdm(range(0, 180, 5)):
+for i in tqdm(range(5, 180, 5)):
 	phi   = i * np.pi/180.0
 	est   = perform_exp(phi, False)
 	print ([phi * 180.0 / np.pi, est])

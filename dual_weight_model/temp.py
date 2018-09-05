@@ -17,7 +17,7 @@ def perform_exp(phi, plot=True):
 	freq  = 0.1
 
 
-	ita   = 1e-3
+	ita   = 1e-1
 	cf    = 0.05
 	cfu    = 0.005
 
@@ -32,7 +32,7 @@ def perform_exp(phi, plot=True):
 	def update_weights(Z1, Z2, W):
 		Z10 = v10 + 1j * u10 
 		Z20 = v20 + 1j * u20 
-		deltaw = ita*((Z1*np.conjugate(Z2)) - W)
+		deltaw = ita*(((Z1-Z10)*np.conjugate(Z2-Z20)) - W)
 		W = W + deltaw
 		return np.array([np.real(W),np.imag(W)]), np.array([np.real(deltaw), np.imag(deltaw)])
 
@@ -52,8 +52,8 @@ def perform_exp(phi, plot=True):
 		v1 =  v2 = 0.05*np.random.randn() #, np.random.randn()
 		u1 =  u2 = 0.05*np.random.randn() #, np.random.randn()
 
-		v10, u10 = np.mean(np.array(v1s)), np.mean(np.array(u1s))
-		v20, u20 = np.mean(np.array(v2s)), np.mean(np.array(u2s))
+		v10, u10 = 0, 0 #np.mean(np.array(v1s)), np.mean(np.array(u1s))
+		v20, u20 = 0, 0 #np.mean(np.array(v2s)), np.mean(np.array(u2s))
 
 		for i in range(int(T/dt)):
 			v1s.append(v1)
@@ -68,11 +68,11 @@ def perform_exp(phi, plot=True):
 				I2 = I1 = 0.5
 				cfu = cf = 0.05
 
-			cpv1 = wt[0]*v2 - wt[1]*u2
-			cpu1 = wt[1]*v2 + wt[0]*u2
+			cpv1 = wt[0]*(v2 - v20) - wt[1]*(u2 - u20)
+			cpu1 = wt[1]*(v2 - v20) + wt[0]*(u2 - u20)
 
-			cpv2 = wt[0]*v1 + wt[1]*u1
-			cpu2 = -wt[1]*v1 + wt[0]*u1
+			cpv2 = wt[0]*(v1 - v10) + wt[1]*(u1 - u10)
+			cpu2 = -wt[1]*(v1 - v10) + wt[0]*(u1 - u10)
 
 
 			v1dot = (v1*(a - v1)*(v1 - 1) - u1 + I1 + cf*cpv1)/freq
@@ -130,7 +130,7 @@ def perform_exp(phi, plot=True):
 
 
 ph_estph = []
-for i in tqdm(range(0, 180, 5)):
+for i in tqdm(range(0, 185, 5)):
 	phi   = i * np.pi/180.0
 	est   = perform_exp(phi, False)
 	print ([phi * 180.0 / np.pi, est])

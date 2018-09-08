@@ -13,7 +13,7 @@ def perform_exp(phi, plot=True):
 	wt   = 0.005*np.random.randn(2)
 	a     = 0.5
 	b     = 0.1
-	gamma = 0.1
+	gamma = 1.5
 	freq  = 0.1
 
 
@@ -80,6 +80,12 @@ def perform_exp(phi, plot=True):
 
 			v2dot = (v2*(a - v2)*(v2 - 1) - u2 + I2 + cf*cpv2)/freq
 			u2dot = b*v2 - gamma*u2 + cfu*cpu2
+
+			v1dot = (u1dot + v1dot) * 1 / np.sqrt(2.0)
+			u1dot = (u1dot - v1dot) * 1 / np.sqrt(2.0)
+			
+			v2dot = (u2dot + v2dot) * 1 / np.sqrt(2.0)
+			u2dot = (u2dot - v2dot) * 1 / np.sqrt(2.0)
 
 			v1 = v1 + v1dot*dt
 			u1 = u1 + u1dot*dt

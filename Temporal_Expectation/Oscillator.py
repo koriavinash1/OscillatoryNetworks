@@ -83,7 +83,7 @@ class CoupledNFM(object):
     def updateLatWeights(self):
         """
         """
-        
+
         deltaw = (np.zeros((size[0], size[1], size[0], size[1])) +\
                         np.zeros((size[0], size[1], size[0], size[1])))*1j
         for i in range(self.Z.shape[0]):
@@ -96,7 +96,7 @@ class CoupledNFM(object):
         pass
 
 
-    def lateralDynamics(self, aff = 2+2j):
+    def lateralDynamics(self, aff = 0.2):
         "Dynamics of NFM sheet..."
         temp_lat = np.zeros(self.Z.shape[0], self.Z.shape[1])
 

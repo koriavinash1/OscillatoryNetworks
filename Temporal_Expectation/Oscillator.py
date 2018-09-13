@@ -8,26 +8,9 @@ from GaussianStatistics import *
 from configure import Config
 from SOM import SOM
 import pdb
+
 Gstat = GaussianStatistics()
 config= Config()
-
-
-OrientationBars = np.load('./Orientation_bars.npy')
-images = OrientationBars.reshape(-1, 10, 10)
-
-# twts = np.zeros((10, 10, 10, 10))
-# for i in range(10):
-#     for j in range(10):
-#         ai = np.random.randint(0, 4)
-#         twts[i, j, :, :] = images[ai*22]
-
-# b = np.empty((100, 100))
-# for i in range(10):
-#     for j in range(10):
-#         b[i*10:(i+1)*10, j*10:(j+1)*10] = twts[i,j,:,:]
-
-# plt.imshow(b)
-# plt.show()
 
 
 # ===================================================================================
@@ -60,11 +43,11 @@ class CoupledNFM(object):
         self.cf      = np.zeros((size[0], size[1], size[0], size[1]), dtype='float64')
         self.cftemp  = np.zeros((size[0], size[1], size[0]+2*self.iRad, size[1]+2*self.iRad), dtype='float64')
 
-        self.Wlat = 0.005*(np.random.randn(size[0], size[1], size[0], size[1]) +\
+        self.Wlat = 0.05*(np.random.randn(size[0], size[1], size[0], size[1]) +\
                                np.random.randn(size[0], size[1], size[0], size[1]))*1j
-        
-        # ===================================================================
 
+
+        # ===================================================================
         for i in range(self.iRad, size[0]+self.iRad):
             for j in range(self.iRad, size[1]+self.iRad):
                 # lateral weights
@@ -96,7 +79,11 @@ class CoupledNFM(object):
             raise ValueError("Invalid Type found")
         return mat
 
+
     def updateLatWeights(self):
+        """
+        """
+        
         deltaw = (np.zeros((size[0], size[1], size[0], size[1])) +\
                         np.zeros((size[0], size[1], size[0], size[1])))*1j
         for i in range(self.Z.shape[0]):
@@ -128,3 +115,4 @@ class CoupledNFM(object):
 
     def fanoFactor(self, sig):
         return np.var(sig)/np.mean(sig)
+ 

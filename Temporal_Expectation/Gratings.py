@@ -5,7 +5,7 @@ from matplotlib import cm
 from scipy import signal
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
 
-class GaussianStatistics():
+class Gratings(object):
 
     def MultivariateGaussian(self, mu, sd, N = 10, A = 1):
         """
@@ -39,22 +39,6 @@ class GaussianStatistics():
 
         return A * np.exp(-fac / 2)
 
-
-    def DOG(self, iRad, eRad, iA, eA):
-        """
-        """
-        eSd = np.array([[eRad**2, -1.],
-                        [-1., eRad**2]])
-        iSd = np.array([[(iRad)**2, -1.],
-                        [-1., (iRad)**2]])
-        mu  = np.array([iRad, iRad])
-        self.iRad = iRad
-        self.eRad = eRad
-        self.pos = self.MultivariateGaussian(mu, eSd, N = 2*iRad, A = eA)
-        self.neg = self.MultivariateGaussian(mu, iSd, N = 2*iRad, A = iA)
-        return self.pos, self.neg
-
-
     def Visualize(self, Gaussian, _type = '2d'):
         """
         """
@@ -80,7 +64,7 @@ class GaussianStatistics():
 
     def OrientationBar(self, N = 10,
                     mu=np.array([5., 5.]),
-                    Sigma=np.array([[20., -19.8], [-19.8, 20]]),
+                    Sigma=np.array([[20., -19.9], [-19.9, 20]]),
                     theta=0, display=False):
         """
         """
@@ -88,11 +72,62 @@ class GaussianStatistics():
         theta = theta*np.pi/180.
 
         # update Sigma based om theta
-        Sigma = np.array([[ Sigma[0,0]*(np.pi*0.5-theta)**2 +1.,
-                            Sigma[0,1]*theta*(np.pi*0.5-theta) + 1.],
-                          [ Sigma[1,0]*theta*(np.pi*0.5-theta) + 1.,
-                            Sigma[1,1]*(theta)**2 +1.]])
+        Sigma = np.array([[ Sigma[0,0]*(np.pi*0.5-theta)**2.0 + 0.1,
+                            Sigma[0,1]*theta*(np.pi*0.5-theta)+ 0.1],
+                          [ Sigma[1,0]*theta*(np.pi*0.5-theta)+ 0.1,
+                            Sigma[1,1]*(theta)**2.+ 0.1]])
 
         _bar = self.MultivariateGaussian(mu, Sigma, N)
         if display: self.Visualize(_bar)
         return _bar
+
+    def fixedGrating(self, N = 10, theta = 45, 
+                    display=False):
+        """
+            Size = (10, 10)
+        """
+        grating = np.zeros((N, N))
+
+        count = 0
+        for x in range(0, int(N*np.sqrt(2))-2, 2):
+            temp = self.OrientationBar(mu = np.array([x, x]), theta = theta)
+            grating += temp * 1.0/np.max(temp)
+            count += 1
+
+        
+        if display: self.Visualize(grating)
+        return grating
+
+    def movingGratings(self, N = 10, theta = 45, 
+                    omega = 10, dt = 0.01, T = 50, 
+                    display=False):
+        """
+
+        """
+        moving_grating = np.zeros((N, N, int(T/dt)))
+        plt.ion()
+        for t in range(int(T/dt)):
+            theta = np.sin( 2*np.pi*omega / int(T/dt) * t)
+            grating = np.zeros((N, N))
+
+            for x in range(0, int(N*np.sqrt(2))-2, 2):
+                temp = self.OrientationBar(mu = np.array([x, x]), theta = theta)
+                grating += temp * 1.0/np.max(temp)
+
+            grating = grating * 1.0/np.max(grating)
+            grating = grating * theta
+            
+            moving_grating[:, :, t] = grating
+            if display:
+                plt.clf()
+                plt.imshow(grating)
+                plt.title(str(t))
+                plt.pause(0.05)
+
+        return moving_grating
+
+
+if __name__ == '__main__':
+    gts = Gratings()
+    gts.fixedGrating(display = True)
+    # gts.movingGratings(display = True)

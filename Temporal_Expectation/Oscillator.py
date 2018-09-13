@@ -5,8 +5,8 @@ from matplotlib import cm
 from scipy import signal
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
 from GaussianStatistics import *
-from configure import Config
-from SOM import SOM
+from config import Config
+# from SOM import SOM
 import pdb
 
 Gstat = GaussianStatistics()
@@ -83,7 +83,7 @@ class CoupledNFM(object):
     def updateLatWeights(self):
         """
         """
-
+        size = self.Z.shape
         deltaw = (np.zeros((size[0], size[1], size[0], size[1])) +\
                         np.zeros((size[0], size[1], size[0], size[1])))*1j
         for i in range(self.Z.shape[0]):
@@ -96,20 +96,15 @@ class CoupledNFM(object):
         pass
 
 
-    def lateralDynamics(self, aff = 0.2):
+    def lateralDynamics(self, temp_aff = 0.2):
         "Dynamics of NFM sheet..."
-        temp_lat = np.zeros(self.Z.shape[0], self.Z.shape[1])
+        temp_lat = np.zeros((self.Z.shape[0], self.Z.shape[1])) + 1j*np.zeros((self.Z.shape[0], self.Z.shape[1])) 
 
         for i in range(self.Z.shape[0]):
             for j in range(self.Z.shape[1]):
                 temp_lat[i, j] = np.mean(self.Z*np.conjugate(self.Wlat[i,j]) - self.Z[i,j]*(np.conjugate(self.Wlat[i,j]) + self.Wlat[i,j]))
 
-        omega = 2.*np.pi/ 25    
-        phi = 37.5*np.pi/180.
-        mu  = 1
-        eps = 1
-
-        Zdot = Z*(mu - np.abs(Z)**2) + omega*Z *1j + eps*temp_aff + temp_lat
+        Zdot = self.Z*(config.mu - np.abs(self.Z)**2) + config.omega*self.Z *1j + config.eps*temp_aff + temp_lat
         self.Z = self.Z + Zdot*config.dt
 
 

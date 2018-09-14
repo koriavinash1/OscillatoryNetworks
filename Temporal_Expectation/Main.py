@@ -8,12 +8,14 @@ from GaussianStatistics import *
 from Gratings import *
 from Oscillator import CoupledNFM
 from config import Config
-# from SOM import SOM
+from SOM import *
 import pdb
 
 Gstat = GaussianStatistics()
 config= Config()
 grts  = Gratings()
+som   = SOM()
+somwts= np.load('./SOM_weights.npy') 
 
 rand = lambda N: np.random.randn(N, N)
 
@@ -27,10 +29,13 @@ class Main(object):
 		pass
 
 
-	def display(self, Z, i, fig,  _type = '2d'):
+	def display(self, Z, i, fig,  _type = '3d'):
 		plt.clf()
 		plt.ion()
 		if _type == '3d':
+			X = np.arange(0, config.N)
+			Y = np.arange(0, config.N)
+			X, Y = np.meshgrid(X, Y)
 			ax = fig.gca(projection='3d')
 			surf = ax.plot_surface(X, Y, np.array(Z, dtype='float') , cmap=cm.coolwarm,
 			               linewidth=0, antialiased=False)
@@ -56,14 +61,14 @@ class Main(object):
 		for t in range(0, int(config.T/config.dt), 1):
 			
 			if t % config.deltaT == 0:
-				temp_aff = rand(config.N)
+				temp_aff = som.response(rand(config.N), somwts)
 
 			if blink:
 				if np.random.randint(1) and t > 3000:
 					self.Flag = True
 
 				if self.Flag and self.Flagcount < config.deltaT:
-					temp_aff = grts.fixedGrating(theta = 45) # [45, 135]
+					temp_aff = som.response(grts.fixedGrating(theta = 45), somwts) # [45, -45]
 					self.Flagcount += 1
 				else:
 					self.Flag = False
@@ -72,7 +77,7 @@ class Main(object):
 			self.oscillator.updateLatWeights()
 			self.Zs[:,:, t] = self.oscillator.Z
 
-			if _display and t % 100 == 0: self.display(np.real(self.oscillator.Z))
+			if _display and t % 100 == 0: self.display(np.real(self.oscillator.Z), t, plt.figure('plot'))
 
 
 		return self.Zs
@@ -95,7 +100,7 @@ class Main(object):
 		    return b, a
 
 
-		def butter_bandpass_filter(data, fs=50.0, lowcut = 0, highcut = 5.0, order=5):
+		def butter_bandpass_filter(data, fs=4.0 * 1e-4, lowcut = 0, highcut = 4.0*1e-4, order=5):
 		    b, a = butter_bandpass(lowcut, highcut, fs, order=order)
 		    y = lfilter(b, a, data)
 		    return y
@@ -151,6 +156,8 @@ class Main(object):
 		NFM => Filter => classifier
 		"""
 		Z  = self.runNFM(blink=False)
+		plt.plot(Z[5,5,:])
+		plt.show()
 		self.viewSignals(Z)
 		fZ = self.filteringSignal()
 		print (classifier)

@@ -4,6 +4,9 @@ from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 from scipy import signal
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
+from config import Config
+
+config = Config()
 
 class Gratings(object):
 
@@ -89,8 +92,12 @@ class Gratings(object):
         grating = np.zeros((N, N))
 
         count = 0
-        for x in range(0, int(N*np.sqrt(2))-2, 2):
-            temp = self.OrientationBar(mu = np.array([x, x]), theta = theta)
+        for x in range(0, int(N*np.sqrt(2))-2, 3):
+            if theta >= 0 and theta <=90: 
+                temp = self.OrientationBar(mu = np.array([x, x]), theta = theta)
+            else:
+                temp = self.OrientationBar(mu = np.array([x, config.N - 1 - x]), theta = theta)
+
             grating += temp * 1.0/np.max(temp)
             count += 1
 
@@ -129,5 +136,5 @@ class Gratings(object):
 
 if __name__ == '__main__':
     gts = Gratings()
-    gts.fixedGrating(display = True)
+    gts.fixedGrating(theta = -45, display = True)
     # gts.movingGratings(display = True)

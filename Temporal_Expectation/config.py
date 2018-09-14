@@ -8,10 +8,10 @@ class Config():
 		self.N   = 10
 
 		# time for projection ...
-		self.deltaT = 500
-		self.omega  = 2.*np.pi/ 25
-		self.mu     = 2
-		self.eps    = 0.01
+		self.deltaT = 1000
+		self.omega  = 2.*np.pi/ 10.0
+		self.mu     = 1
+		self.eps    = 1
 
-		self.Thresh = 0.5
+		self.Thresh = 0.003
 	pass

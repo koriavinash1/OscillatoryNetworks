@@ -102,7 +102,7 @@ class CoupledNFM(object):
 
         for i in range(self.Z.shape[0]):
             for j in range(self.Z.shape[1]):
-                temp_lat[i, j] = np.mean(self.Z*np.conjugate(self.Wlat[i,j]) - self.Z[i,j]*(np.conjugate(self.Wlat[i,j]) + self.Wlat[i,j]))
+                temp_lat[i, j] = np.mean(self.cf[i,j] * (self.Z*np.conjugate(self.Wlat[i,j]) - self.Z[i,j]*(np.conjugate(self.Wlat[i,j]) + self.Wlat[i,j])))
 
         Zdot = self.Z*(config.mu - np.abs(self.Z)**2) + config.omega*self.Z *1j + config.eps*temp_aff + temp_lat
         self.Z = self.Z + Zdot*config.dt

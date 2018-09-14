@@ -57,7 +57,7 @@ class Main(object):
 	def runNFM(self, _display = False, blink=True):
 		"""
 		"""
-
+		# plt.ion()
 		for t in range(0, int(config.T/config.dt), 1):
 			
 			if t % config.deltaT == 0:
@@ -73,8 +73,12 @@ class Main(object):
 				else:
 					self.Flag = False
 
+			# plt.imshow(temp_aff)
+			# plt.title(t)
+			# plt.pause(0.005)
+
 			self.oscillator.lateralDynamics(temp_aff)
-			self.oscillator.updateLatWeights()
+			if self.Flag and self.Flagcount < config.deltaT: self.oscillator.updateLatWeights()
 			self.Zs[:,:, t] = self.oscillator.Z
 
 			if _display and t % 100 == 0: self.display(np.real(self.oscillator.Z), t, plt.figure('plot'))
@@ -117,21 +121,26 @@ class Main(object):
 		"""
 			data format complex number
 		"""
-		x = np.random.randint(0, config.N, 5)
-		y = np.random.randint(0, config.N, 5)
+		# x = np.random.randint(0, config.N, 5)
+		# y = np.random.randint(0, config.N, 5)
 
-		plt.figure('Real')
-		for i in range(5):
-			plt.subplot(5, 1, i + 1)
-			plt.plot(np.real(data[x[i], y[i], :]))
-			plt.title("x:" + str(x[i]) + "  y:" + str(y[i]))
+		# plt.figure('Real')
+		# for i in range(5):
+		# 	plt.subplot(5, 1, i + 1)
+		# 	plt.plot(np.real(data[x[i], y[i], :]))
+		# 	plt.title("x:" + str(x[i]) + "  y:" + str(y[i]))
 
-		plt.figure('Imaginary')
-		for i in range(5):
-			plt.subplot(5, 1, i + 1)
-			plt.plot(np.imag(data[x[i], y[i], :]))
-			plt.title("x:" + str(x[i]) + "  y:" + str(y[i]))
+		# plt.figure('Imaginary')
+		# for i in range(5):
+		# 	plt.subplot(5, 1, i + 1)
+		# 	plt.plot(np.imag(data[x[i], y[i], :]))
+		# 	plt.title("x:" + str(x[i]) + "  y:" + str(y[i]))
 
+		signal = np.mean(data, axis=(0,1)) 
+		plt.subplot(2,1,1)
+		plt.plot(np.real(signal))
+		plt.subplot(2,1,2)
+		plt.plot(np.imag(signal))
 		plt.show()
 		pass
 
@@ -141,11 +150,11 @@ class Main(object):
 			delta Signal classifier 
 		"""
 		# based on visualization determine threshold..
+		signal = np.mean(data, axis=(0,1))
+		print (np.mean(np.real(signal)), np.var(np.real(signal)))
+		print (np.mean(np.imag(signal)), np.var(np.imag(signal)))
 
-		print (np.mean(np.real(data)))
-		print (np.mean(np.imag(data)))
-
-		if np.mean(np.real(data)) >= config.Thresh:
+		if np.var(np.real(signal)) >= config.Thresh:
 			return True
 
 		else: return False
@@ -156,12 +165,17 @@ class Main(object):
 		NFM => Filter => classifier
 		"""
 		Z  = self.runNFM(blink=False)
-		plt.plot(Z[5,5,:])
-		plt.show()
-		self.viewSignals(Z)
-		fZ = self.filteringSignal()
-		print (classifier)
+		# plt.plot(Z[5,5,:])
+		# plt.show()
+		# self.viewSignals(Z)
+		# fZ = self.filteringSignal()
+		print (self.classifier(Z))
+		return np.var(np.real(np.mean(Z, axis=(0,1))))
 
 if __name__ == '__main__':
+	thresh = []
 	exp = Main(config.deltaT)
-	exp.performExp()
+	for _ in range(1000):
+		thresh.append(exp.performExp())
+
+	print (np.mean(np.array(thresh)))

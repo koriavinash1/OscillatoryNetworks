@@ -63,14 +63,13 @@ class Main(object):
             
             if t % config.deltaT == 0:
                 temp_aff = rand(config.N) # som.response(rand(config.N), somwts)
-                if random: config.deltaT = np.random.randint(100, 2000)
+                if random: config.deltaT = np.random.randint(800, 2000)
 
             if blink:
                 if (np.random.uniform(0, 1) > 0.5) and t > config.TrainingTime:
                     self.Flag = True
 
                 if self.Flag and self.Flagcount < config.deltaT:
-                    print ("pattern")
                     if (np.random.uniform(0, 1) > 0.5): temp_aff = som.response(grts.fixedGrating(theta = 45), somwts) # [45, -45]
                     else: temp_aff = som.response(grts.fixedGrating(theta = -45), somwts) # [45, -45]
                     self.Flagcount += 1
@@ -185,17 +184,17 @@ class Main(object):
         print (np.mean(np.real(signal)), np.var(np.real(signal)))
         print (np.mean(np.imag(signal)), np.var(np.imag(signal)))
 
-        if np.var(np.abs(np.real(signal))) >= config.Thresh:
+        if np.var(np.abs(np.real(signal))) >= config.Thresh and np.var(np.abs(np.imag(signal))) >= config.Thresh:
             return False
 
         else: return True
 
 
-    def performExp(self, blink=True):
+    def performExp(self, blink=True, random = False):
         """
         NFM => Filter => classifier
         """
-        Z  = self.runNFM(blink=blink)
+        Z  = self.runNFM(blink=blink, random = random)
         # plt.plot(Z[5,5,:])
         # plt.show()
         # fZ = self.filteringSignal()
@@ -213,7 +212,7 @@ if __name__ == '__main__':
     threshTrue = []
     for _ in tqdm(range(15)):
         exp = Main(config.deltaT)
-        threshTrue.append(exp.performExp(blink = True))
+        threshTrue.append(exp.performExp(blink = True, random = True))
 
     plt.plot(np.array(threshTrue), 'r')
     plt.plot(np.array(threshFalse), 'b')

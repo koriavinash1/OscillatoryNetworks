@@ -4,14 +4,15 @@ class Config():
 	def __init__(self):
 		self.ita = 1e-3
 		self.dt  = 0.01
-		self.T   = 100
+		self.T   = 70
 		self.N   = 10
+		self.TrainingTime = 5000
 
 		# time for projection ...
-		self.deltaT = 500
-		self.omega  = 2.*np.pi/ 30.0
+		self.deltaT = 1000
+		self.omega  = 2.*np.pi/ 25.0
 		self.mu     = 1
 		self.eps    = 1
 
-		self.Thresh = 0.003
+		self.Thresh = 0.0015
 	pass

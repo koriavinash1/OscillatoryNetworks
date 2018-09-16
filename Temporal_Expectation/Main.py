@@ -23,7 +23,6 @@ rand = lambda N: np.random.randn(N, N)
 class Main(object):
     def __init__(self, deltaT):
         self.deltaT = deltaT
-        self.Zs     = np.zeros((config.N, config.N, int(config.T/config.dt)), dtype='complex64')
         self.Flag   = False
         self.Flagcount  = 0
         self.oscillator = CoupledNFM()
@@ -55,37 +54,50 @@ class Main(object):
         pass
 
 
-    def runNFM(self, _display = False, blink=True):
+    def runNFM(self, _display = False, blink=True, random = False):
         """
         """
         # plt.ion()
+        self.Zs     = np.zeros((config.N, config.N, int(config.T/config.dt)), dtype='complex64')
         for t in range(0, int(config.T/config.dt), 1):
             
             if t % config.deltaT == 0:
-                temp_aff = som.response(rand(config.N), somwts)
+                temp_aff = rand(config.N) # som.response(rand(config.N), somwts)
+                if random: config.deltaT = np.random.randint(100, 2000)
 
             if blink:
-                if np.random.randint(1) and t > 3000:
+                if (np.random.uniform(0, 1) > 0.5) and t > config.TrainingTime:
                     self.Flag = True
 
                 if self.Flag and self.Flagcount < config.deltaT:
-                    temp_aff = som.response(grts.fixedGrating(theta = 45), somwts) # [45, -45]
+                    print ("pattern")
+                    if (np.random.uniform(0, 1) > 0.5): temp_aff = som.response(grts.fixedGrating(theta = 45), somwts) # [45, -45]
+                    else: temp_aff = som.response(grts.fixedGrating(theta = -45), somwts) # [45, -45]
                     self.Flagcount += 1
                 else:
                     self.Flag = False
 
-            # plt.imshow(temp_aff)
-            # plt.title(t)
-            # plt.pause(0.005)
+            # lateralTraining ...
+            if t < config.TrainingTime:
+                if (np.random.uniform(0, 1) > 0.5): temp_aff = som.response(grts.fixedGrating(theta = 45), somwts) # [45, -45]
+                else: temp_aff = som.response(grts.fixedGrating(theta = -45), somwts) # [45, -45]
+
+            # if t % 200 == 0:
+            #     plt.imshow(temp_aff)
+            #     plt.title(t)
+            #     plt.pause(0.005)
 
             self.oscillator.lateralDynamics(temp_aff)
-            if self.Flag and self.Flagcount < config.deltaT: self.oscillator.updateLatWeights()
+            if (self.Flag and self.Flagcount < config.deltaT) or t < config.TrainingTime: 
+                self.oscillator.updateLatWeights()
+            
             self.Zs[:,:, t] = self.oscillator.Z
 
-            if _display and t % 100 == 0: self.display(np.real(self.oscillator.Z), t, plt.figure('plot'))
+            if _display and t % 300 == 0: self.display(np.real(self.oscillator.Z), t, plt.figure('plot'))
 
-
+        self.Zs = self.Zs[:, :, config.TrainingTime :]
         return self.Zs
+
 
     def filteringSignal(self):
         """
@@ -170,13 +182,13 @@ class Main(object):
         """
         # based on visualization determine threshold..
         signal = np.mean(data, axis=(0,1))
-        # print (np.mean(np.real(signal)), np.var(np.real(signal)))
-        # print (np.mean(np.imag(signal)), np.var(np.imag(signal)))
+        print (np.mean(np.real(signal)), np.var(np.real(signal)))
+        print (np.mean(np.imag(signal)), np.var(np.imag(signal)))
 
-        if np.var(np.real(signal))*100 - 0.1 >= config.Thresh:
-            return True
+        if np.var(np.abs(np.real(signal))) >= config.Thresh:
+            return False
 
-        else: return False
+        else: return True
 
 
     def performExp(self, blink=True):
@@ -187,20 +199,21 @@ class Main(object):
         # plt.plot(Z[5,5,:])
         # plt.show()
         # fZ = self.filteringSignal()
-        # self.viewSignals(fZ)
+        # self.viewSignals(Z)
         print (self.classifier(Z))
-        return np.max(np.abs(np.real(np.mean(Z, axis=(0,1)))))
+        return np.var(np.abs(np.real(np.mean(Z, axis=(0,1)))))
+
 
 if __name__ == '__main__':
     threshFalse = []
-    exp = Main(config.deltaT)
     for _ in tqdm(range(15)):
-        threshFalse.append(exp.performExp(blink=False))
+        exp = Main(config.deltaT)
+        threshFalse.append(exp.performExp(blink = False))
 
     threshTrue = []
-    exp = Main(config.deltaT)
     for _ in tqdm(range(15)):
-        threshTrue.append(exp.performExp())
+        exp = Main(config.deltaT)
+        threshTrue.append(exp.performExp(blink = True))
 
     plt.plot(np.array(threshTrue), 'r')
     plt.plot(np.array(threshFalse), 'b')

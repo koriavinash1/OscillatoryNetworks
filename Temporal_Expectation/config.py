@@ -9,10 +9,14 @@ class Config():
 		self.TrainingTime = 5000
 
 		# time for projection ...
-		self.deltaT = 1000
+		self.rdeltaT = 1000
+		self.gdeltaT = 1000
 		self.omega  = 2.*np.pi/ 25.0
 		self.mu     = 1
 		self.eps    = 1
 
 		self.Thresh = 0.0015
+		self.generate = True
+		self.random   = False
+		self.saveLat  = False
 	pass

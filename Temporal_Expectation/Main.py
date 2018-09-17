@@ -54,45 +54,56 @@ class Main(object):
         pass
 
 
-    def runNFM(self, _display = False, blink=True, random = False):
+    def runNFM(self, _display = False, 
+                    blink     = True, 
+                    random    = config.random,
+                    generate  = config.generate):
         """
         """
         # plt.ion()
+
+        data = {'spatio_temporal_wave': [], 'label':[], 'base_wave': []} 
         self.Zs     = np.zeros((config.N, config.N, int(config.T/config.dt)), dtype='complex64')
-        for t in range(0, int(config.T/config.dt), 1):
-            
-            if t % config.deltaT == 0:
+        label = False
+
+        for t in range(0, int(config.T/config.dt), 1): 
+
+            if t % config.rdeltaT == 0:
                 temp_aff = rand(config.N) # som.response(rand(config.N), somwts)
+                label = False
                 if random: config.deltaT = np.random.randint(800, 2000)
 
-            if blink:
-                if (np.random.uniform(0, 1) > 0.5) and t > config.TrainingTime:
-                    self.Flag = True
-
-                if self.Flag and self.Flagcount < config.deltaT:
+            if blink and t % config.rdeltaT == 0:
+                if t % config.gdeltaT == 0 and t != 0: T = (np.random.uniform(0, 1) > 0.5)
+                
+                if T and (t % config.gdeltaT != 0):
                     if (np.random.uniform(0, 1) > 0.5): temp_aff = som.response(grts.fixedGrating(theta = 45), somwts) # [45, -45]
                     else: temp_aff = som.response(grts.fixedGrating(theta = -45), somwts) # [45, -45]
-                    self.Flagcount += 1
-                else:
-                    self.Flag = False
+                    label = True
 
             # lateralTraining ...
             if t < config.TrainingTime:
                 if (np.random.uniform(0, 1) > 0.5): temp_aff = som.response(grts.fixedGrating(theta = 45), somwts) # [45, -45]
                 else: temp_aff = som.response(grts.fixedGrating(theta = -45), somwts) # [45, -45]
 
-            # if t % 200 == 0:
-            #     plt.imshow(temp_aff)
-            #     plt.title(t)
-            #     plt.pause(0.005)
-
             self.oscillator.lateralDynamics(temp_aff)
-            if (self.Flag and self.Flagcount < config.deltaT) or t < config.TrainingTime: 
+            if t < config.TrainingTime: 
                 self.oscillator.updateLatWeights()
-            
+                if config.saveLat: np.save(self.oscillator.Wlat, './latweights.npy')
+
             self.Zs[:,:, t] = self.oscillator.Z
 
+            # save data to train classifier
+            if generate: 
+                data['spatio_temporal_wave'].append(self.oscillator.Z)
+                data['base_wave'].append(np.mean(self.oscillator.Z))
+                data['label'].append(label)
+
             if _display and t % 300 == 0: self.display(np.real(self.oscillator.Z), t, plt.figure('plot'))
+
+        if generate:
+            np.save(np.array(data['spatio_temporal_wave']), 'Xtrain.npy')
+            np.save(np.array(data['label']), 'Ytrain.npy')
 
         self.Zs = self.Zs[:, :, config.TrainingTime :]
         return self.Zs

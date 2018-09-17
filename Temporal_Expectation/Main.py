@@ -12,6 +12,11 @@ from config import Config
 from SOM import *
 import pdb
 
+import keras
+from keras.models import Sequential
+from keras.models import load_model
+from keras.layers import Dense, Activation, Dropout
+
 Gstat = GaussianStatistics()
 config= Config()
 grts  = Gratings()
@@ -185,6 +190,37 @@ class Main(object):
         plt.show()
         pass
 
+    def classifier_net(self):
+        model = Sequential([
+                    Dense(4, input_shape=(100,)), # TODO:
+                    Activation('softmax')
+                ])
+        return model
+
+    def fit_classifier(self):
+        Xdata = np.load('Xdata.npy')
+        Ydata = np.load('Ydata.npy')
+        total = len(Xdata)
+        Xtrain, Ytrain = Xdata[: int(0.9*total)], Ydata[: int(0.9*total)]
+        Xtest, Ytest = Xdata[int(0.1*total):], Ydata[int(0.1*total):]
+
+        model = self.classifier_net()
+        model.compile(optimizer='adam',
+                        loss='binary_crossentropy',
+                        metrics=['accuracy'])
+
+        model.fit(Xtrain, Ytrain, epochs=50, batch_size=4, validation_data=(Xtest, Ytest))
+
+        score = model.evaluate(Xtest, Ytest, batch_size=4)
+        print("Performance on held out test data: {}".format(score))
+
+        model.save('model.h5')
+        return model
+
+    def infer_classifier(self, x):
+        model = load_model('model.h5')
+        y = model.predict(x)
+        return y
 
     def classifier(self, data):
         """

@@ -8,6 +8,7 @@ from config import Config
 
 config = Config()
 
+
 class Gratings(object):
 
     def MultivariateGaussian(self, mu, sd, N = 10, A = 1):
@@ -67,7 +68,7 @@ class Gratings(object):
 
     def OrientationBar(self, N = 10,
                     mu=np.array([5., 5.]),
-                    Sigma=np.array([[20., -19.9], [-19.9, 20]]),
+                    Sigma=np.array([[400, -399], [-399, 400]]),
                     theta=0, display=False):
         """
         """

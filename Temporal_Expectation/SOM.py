@@ -10,7 +10,9 @@ from config import Config
 from Gratings import *
 # from keras.datasets import mnist
 
-Gstat  = GaussianStatistics()
+# Gstat  = GaussianStatistics()
+Gstat  = Gratings()
+
 config = Config()
 
 
@@ -84,7 +86,7 @@ class SOM():
         print ("SOM Training done!!...")
         pass
 
-    def response(self, X, wt, sig = 0.5):
+    def response(self, X, wt, sig = 1.5):
         """
         """
         x = X.flatten('F')
@@ -115,13 +117,14 @@ class SOM():
     def moveresp(self, display=True):
         """
         """
+        plt.ion()
         for x in self.data:
             N = np.sqrt(len(x))
             X = x.reshape(int(N), int(N), order='F')
             y = self.response(X, self.weights)
             if display:
                 plt.imshow(y)
-                plt.show()
+                plt.pause(1)
         pass
 
     def load_weights(self, path):
@@ -138,18 +141,18 @@ class SOM():
 if __name__ == '__main__':
     ## Data Generation....
     data = []
-    # for angle in range(0, 180, 2):
-    #     _bar = Gstat.OrientationBar(N = config.N,
-    #                                 theta = angle,
-    #                                 display = False)
-    #     data.append(_bar.flatten('F'))
-    # data = np.array(data)
+    for angle in range(0, 180, 2):
+        _bar = Gstat.fixedGrating(N = config.N,
+                                    theta = angle,
+                                    display = False)
+        data.append(_bar.flatten('F'))
+    data = np.array(data)
 
     grts  = Gratings()
     # data.append(grts.fixedGrating(theta = 0, display = True).flatten('F'))
-    data.append(np.random.randn(10,10).flatten('F'))
-    data.append(Gstat.OrientationBar(N = config.N,theta = 0, display = True).flatten('F'))
-    data = np.array(data)
+    # data.append(np.random.randn(10,10).flatten('F'))
+    # data.append(Gstat.OrientationBar(N = config.N,theta = 0, display = True).flatten('F'))
+    # data = np.array(data)
 
     SOM = SOM((10,10), data, 500, 0.01)
     SOM.fit()

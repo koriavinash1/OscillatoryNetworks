@@ -16,7 +16,7 @@ np.random.seed(2018)
 import keras
 from keras.models import Sequential
 from keras.models import load_model
-from keras.layers import Dense, Activation, Dropout
+from keras.layers import Dense, Conv2D, MaxPooling2D, Flatten, Activation, Dropout
 
 Gstat = GaussianStatistics()
 config= Config()
@@ -59,7 +59,7 @@ class Main(object):
         pass
 
 
-    def runNFM(self, _display = True, 
+    def runNFM(self, _display = False, 
                     blink     = True, 
                     random    = config.random,
                     generate  = config.generate):
@@ -70,6 +70,8 @@ class Main(object):
         data = {'spatio_temporal_wave': [], 'label':[], 'base_wave': []} 
         self.Zs     = np.zeros((config.N, config.N, int(config.T/config.dt)), dtype='complex64')
         label = [1, 0]
+        Zlab = []
+        Zt   = np.zeros_like(self.oscillator.Z)
 
         for t in tqdm(range(0, int(config.T/config.dt), 1)): 
 
@@ -87,10 +89,14 @@ class Main(object):
                     # else: temp_aff = som.response(grts.fixedGrating(theta = -45), somwts) # [45, -45]
                     label = [0, 1]
 
+            # plt.subplot(1, 2, 1)
+            # plt.imshow(temp_aff)
+
             # lateralTraining ...
             if t < config.TrainingTime:
                 temp_aff = som.response(grts.fixedGrating(theta = 45), somwts) # [45, -45]
                 # else: temp_aff = som.response(grts.fixedGrating(theta = -45), somwts) # [45, -45]
+
 
             self.oscillator.lateralDynamics(temp_aff)
 
@@ -100,15 +106,25 @@ class Main(object):
 
             self.Zs[:,:, t] = self.oscillator.Z
 
-            data['spatio_temporal_wave'].append(self.oscillator.Z)
-            data['base_wave'].append(np.mean(self.oscillator.Z))
-            data['label'].append(label)
+            Zt += self.oscillator.Z
+            Zlab.append(label)
+
+            if t % config.microT == config.microT -1 :
+                data['spatio_temporal_wave'].append(Zt)
+                data['base_wave'].append(np.mean(Zt))
+                data['label'].append([1, 0] if not np.argmax(np.mean(np.array(Zlab), axis = 0)) else [0, 1])
+                # print data['spatio_temporal_wave'][-1]
+                Zt   = np.zeros_like(self.oscillator.Z)
+                Zlab = []
+                # plt.subplot(1, 2, 2)
+                # plt.imshow(np.angle(data['spatio_temporal_wave'][-1]))
+                # plt.pause(0.5)
 
             if _display and t % 100 == 0: self.display(np.real(self.oscillator.Z), t, plt.figure('plot'))
 
         # save data to train classifier 
         if generate:
-            np.save('Xtrain.npy', np.array(data['spatio_temporal_wave']))
+            np.save('Xtrain.npy', np.angle(np.array(data['spatio_temporal_wave'])))
             np.save('Ytrain.npy', np.array(data['label']))
             print (np.array(data['label']).shape)
 
@@ -194,14 +210,15 @@ class Main(object):
 
     def classifier_net(self):
         model = Sequential([
-                    Dense(28, input_shape=(100,), activation = 'relu'), # TODO:
-                    Dense(2),
-                    Activation('sigmoid')
+                    Conv2D(32, kernel_size = (3,3), input_shape=(10, 10, 1), activation = 'relu'), # TODO:
+                    MaxPooling2D((2,2)),
+                    Flatten(),
+                    Dense(2, activation='sigmoid')
                 ])
         return model
 
     def fit_classifier(self):
-        Xdata = np.load('./Xtrain.npy').reshape(-1, 100)
+        Xdata = np.load('./Xtrain.npy').reshape(-1, 10, 10, 1)
         Ydata = np.load('./Ytrain.npy')
         total = len(Xdata)
         Xtrain, Ytrain = Xdata[: int(0.9*total)], Ydata[: int(0.9*total)]
@@ -210,7 +227,7 @@ class Main(object):
         print (Ytest.shape, Xtest.shape)
         model = self.classifier_net()
         model.compile(optimizer='adam',
-                        loss='categorical_crossentropy',
+                        loss='binary_crossentropy',
                         metrics=['accuracy', 'mse'])
 
         model.fit(Xtrain, Ytrain, epochs=config.epoch, batch_size=128, validation_data=(Xtest, Ytest))
@@ -234,7 +251,7 @@ class Main(object):
         true, false = [], []
         for i in tqdm(range(data.shape[2])):
             x = data[i, :,:]
-            xp, yp = self.infer_classifier(x.reshape(1, 100))
+            xp, yp = self.infer_classifier(x.reshape(1, 10, 10, 1))
             true.append(xp)
             false.append(yp)
 
@@ -248,7 +265,7 @@ class Main(object):
         data   = self.runNFM(blink=blink, random = random)
         tp, fp = self.classifier(np.array(data['spatio_temporal_wave']))    
         base_wave = data['base_wave']
-        
+        print tp, fp
         plt.subplot(4, 1, 1)
         plt.plot(tp,'r')
         
@@ -267,7 +284,7 @@ class Main(object):
 
 if __name__ == '__main__':
     exp = Main()
-    # exp.runNFM()
+    if config.generate: exp.runNFM()
     if config.Train: exp.fit_classifier()
     exp.performExp()
 

@@ -136,5 +136,5 @@ class Gratings(object):
 
 if __name__ == '__main__':
     gts = Gratings()
-    gts.fixedGrating(theta = -45, display = True)
+    gts.fixedGrating(theta = 45, display = True)
     # gts.movingGratings(display = True)

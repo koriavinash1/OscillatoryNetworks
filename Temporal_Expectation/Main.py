@@ -112,7 +112,7 @@ class Main(object):
             if t % config.microT == config.microT -1 :
                 data['spatio_temporal_wave'].append(Zt)
                 data['base_wave'].append(np.mean(Zt))
-                data['label'].append([1, 0] if not np.argmax(np.mean(np.array(Zlab), axis = 0)) else [0, 1])
+                data['label'].append(0.0 if not np.argmax(np.mean(np.array(Zlab), axis = 0)) else 1.0)
                 # print data['spatio_temporal_wave'][-1]
                 Zt   = np.zeros_like(self.oscillator.Z)
                 Zlab = []
@@ -210,15 +210,16 @@ class Main(object):
 
     def classifier_net(self):
         model = Sequential([
-                    Conv2D(32, kernel_size = (3,3), input_shape=(10, 10, 1), activation = 'relu'), # TODO:
-                    MaxPooling2D((2,2)),
-                    Flatten(),
-                    Dense(2, activation='sigmoid')
+                    Dense(1, input_shape=(100,), activation='sigmoid')
+                    # Conv2D(32, kernel_size = (3,3), input_shape=(10, 10, 1), activation = 'relu'), # TODO:
+                    # MaxPooling2D((2,2)),
+                    # Flatten(),
+                    # Dense(2, activation='sigmoid')
                 ])
         return model
 
     def fit_classifier(self):
-        Xdata = np.load('./Xtrain.npy').reshape(-1, 10, 10, 1)
+        Xdata = np.load('./Xtrain.npy').reshape(-1, 100)
         Ydata = np.load('./Ytrain.npy')
         total = len(Xdata)
         Xtrain, Ytrain = Xdata[: int(0.9*total)], Ydata[: int(0.9*total)]
@@ -241,7 +242,7 @@ class Main(object):
     def infer_classifier(self, x):
         model = load_model('model.h5')
         y = model.predict(x)[0]
-        return y[0], y[1]
+        return y[0], 1.0 - y[0]
 
     def classifier(self, data):
         """
@@ -251,7 +252,7 @@ class Main(object):
         true, false = [], []
         for i in tqdm(range(data.shape[2])):
             x = data[i, :,:]
-            xp, yp = self.infer_classifier(x.reshape(1, 10, 10, 1))
+            xp, yp = self.infer_classifier(x.reshape(1, 100))
             true.append(xp)
             false.append(yp)
 
@@ -277,7 +278,7 @@ class Main(object):
 
         plt.subplot(4, 1, 4)
         print np.array(data['label']).shape
-        plt.plot(np.array(data['label'])[:, 1],'g')
+        plt.plot(np.array(data['label']),'g')
         plt.show()
         pass
 

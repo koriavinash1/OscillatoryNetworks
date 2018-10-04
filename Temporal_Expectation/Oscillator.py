@@ -43,7 +43,7 @@ class CoupledNFM(object):
         self.cf      = np.zeros((size[0], size[1], size[0], size[1]), dtype='float64')
         self.cftemp  = np.zeros((size[0], size[1], size[0]+2*self.iRad, size[1]+2*self.iRad), dtype='float64')
 
-        self.Wlat = 0.05*(np.random.randn(size[0], size[1], size[0], size[1]) +\
+        self.Wlat = (np.random.randn(size[0], size[1], size[0], size[1]) +\
                                np.random.randn(size[0], size[1], size[0], size[1]))*1j
 
 
@@ -68,7 +68,7 @@ class CoupledNFM(object):
         "performs different types of normalization"
 
         if type_ == 'L1':
-            mat = mat/ np.sum(np.abs(mat))
+            mat = mat/ np.sum(np.abs(mat),axis=0)
         elif type_ == 'MinMax':
             mat = (mat - np.min(mat))/ (np.max(mat) - np.min(mat))
         elif type_ == 'Zscore':
@@ -92,7 +92,6 @@ class CoupledNFM(object):
 
         self.Wlat += deltaw 
         self.Wlat = self.Normalize(self.Wlat)
-        
         pass
 
 
@@ -103,6 +102,7 @@ class CoupledNFM(object):
         for i in range(self.Z.shape[0]):
             for j in range(self.Z.shape[1]):
                 temp_lat[i, j] = np.mean(self.cf[i,j] * (self.Z*np.conjugate(self.Wlat[i,j]) - self.Z[i,j]*(np.conjugate(self.Wlat[i,j]) + self.Wlat[i,j])))
+                # temp_lat[i, j] = np.mean((self.Z*np.conjugate(self.Wlat[i,j]) - self.Z[i,j]*(np.conjugate(self.Wlat[i,j]) + self.Wlat[i,j])))
 
         Zdot = self.Z*(config.mu - np.abs(self.Z)**2) + config.omega*self.Z *1j + config.eps*temp_aff + temp_lat
         self.Z = self.Z + Zdot*config.dt
@@ -110,4 +110,3 @@ class CoupledNFM(object):
 
     def fanoFactor(self, sig):
         return np.var(sig)/np.mean(sig)
- 

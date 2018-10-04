@@ -77,7 +77,7 @@ class Main(object):
 
             # aff. input ...
             if t % config.gdeltaT == 0:
-                temp_aff = rand(config.N) # som.response(rand(config.N), somwts)
+                temp_aff = rand(config.N)#som.response(rand(config.N), somwts)
                 label = [1, 0]
                 if random: config.gdeltaT = np.random.randint(800, 2000)
 
@@ -89,19 +89,17 @@ class Main(object):
                     # else: temp_aff = som.response(grts.fixedGrating(theta = -45), somwts) # [45, -45]
                     label = [0, 1]
 
-            # plt.subplot(1, 2, 1)
-            # plt.imshow(temp_aff)
-
             # lateralTraining ...
             if t < config.TrainingTime:
                 temp_aff = som.response(grts.fixedGrating(theta = 45), somwts) # [45, -45]
                 # else: temp_aff = som.response(grts.fixedGrating(theta = -45), somwts) # [45, -45]
 
 
-            self.oscillator.lateralDynamics(temp_aff)
+            self.oscillator.lateralDynamics()
 
             if t < config.TrainingTime: 
                 self.oscillator.updateLatWeights()
+                print np.abs(self.oscillator.Wlat)
                 if config.saveLat: np.save('./latweights.npy', self.oscillator.Wlat)
 
             self.Zs[:,:, t] = self.oscillator.Z
@@ -110,21 +108,24 @@ class Main(object):
             Zlab.append(label)
 
             if t % config.microT == config.microT -1 :
-                data['spatio_temporal_wave'].append(Zt)
-                data['base_wave'].append(np.mean(Zt))
+                data['spatio_temporal_wave'].append(np.angle(Zt*1.0/config.microT))
+                data['base_wave'].append(np.angle(np.mean(Zt)))
                 data['label'].append(0.0 if not np.argmax(np.mean(np.array(Zlab), axis = 0)) else 1.0)
                 # print data['spatio_temporal_wave'][-1]
                 Zt   = np.zeros_like(self.oscillator.Z)
                 Zlab = []
+
+                # plt.subplot(1, 2, 1)
+                # plt.imshow(temp_aff)
                 # plt.subplot(1, 2, 2)
                 # plt.imshow(np.angle(data['spatio_temporal_wave'][-1]))
                 # plt.pause(0.5)
 
-            if _display and t % 100 == 0: self.display(np.real(self.oscillator.Z), t, plt.figure('plot'))
+            if _display and t % 100 == 0: self.display(np.angle(self.oscillator.Z), t, plt.figure('plot'))
 
         # save data to train classifier 
         if generate:
-            np.save('Xtrain.npy', np.angle(np.array(data['spatio_temporal_wave'])))
+            np.save('Xtrain.npy', np.array(data['spatio_temporal_wave']))
             np.save('Ytrain.npy', np.array(data['label']))
             print (np.array(data['label']).shape)
 
@@ -210,7 +211,8 @@ class Main(object):
 
     def classifier_net(self):
         model = Sequential([
-                    Dense(1, input_shape=(100,), activation='sigmoid')
+                    Dense(28, input_shape=(100,), activation='relu'),
+                    Dense(1, activation='sigmoid')
                     # Conv2D(32, kernel_size = (3,3), input_shape=(10, 10, 1), activation = 'relu'), # TODO:
                     # MaxPooling2D((2,2)),
                     # Flatten(),

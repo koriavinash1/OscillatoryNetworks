@@ -133,7 +133,7 @@ class SOM():
     def get_weights(self):
         """
         """
-        np.save(config.SOM_weights_path, self.weights)
+        np.save('./SOM_weights.npy', self.weights)
         return self.weights
 
 
@@ -141,7 +141,7 @@ class SOM():
 if __name__ == '__main__':
     ## Data Generation....
     data = []
-    for angle in range(0, 180, 2):
+    for angle in range(0, 180, 45):
         _bar = Gstat.fixedGrating(N = config.N,
                                     theta = angle,
                                     display = False)
@@ -156,9 +156,10 @@ if __name__ == '__main__':
 
     SOM = SOM((10,10), data, 500, 0.01)
     SOM.fit()
+
+    # Show trained weights
+    print "Trained weights from SOM,", SOM.get_weights()
+    
     SOM.load_weights('./SOM_weights.npy')
     SOM.moveresp()
     SOM.view_weights()
-
-    # Show trained weights
-    # print "Trained weights from SOM,", SOM.get_weights()

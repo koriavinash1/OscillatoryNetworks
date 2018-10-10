@@ -68,7 +68,7 @@ class CoupledNFM(object):
         "performs different types of normalization"
 
         if type_ == 'L1':
-            mat = mat/ np.sum(np.abs(mat),axis=0)
+            mat = mat/ (np.sum(np.abs(mat),axis=(0, 1)) + np.sum(np.abs(mat),axis=(2,3)))[:, :, None, None]
         elif type_ == 'MinMax':
             mat = (mat - np.min(mat))/ (np.max(mat) - np.min(mat))
         elif type_ == 'Zscore':

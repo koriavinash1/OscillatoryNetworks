@@ -1,7 +1,7 @@
 %% Generalized equation for N hopf oscillators
 
 clear; close all; clc;
-N=3; %input the number of nodes
+N=9; %input the number of nodes
 S=0.5*N*(N-1); % number of edges/connections
 si=complex(rand(1,S),rand(1,S));
 %% Arranging weights as a hermition matrix of size NxN 
@@ -21,7 +21,7 @@ w=A1+A2;
 z=rand(N,1);
 z1=z;
 mu=1;
-omega=2*pi*[3 3 sqrt(3) ]';
+omega=2*pi*[1, sqrt(2), sqrt(3), 2, sqrt(5), sqrt(6), sqrt(7), sqrt(8), 3 ]';
 if numel(omega)~=N
     error(['enter ',num2str(N),' initial frequencies']);
 end

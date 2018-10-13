@@ -44,7 +44,7 @@ class CoupledNFM(object):
         self.cftemp  = np.zeros((size[0], size[1], size[0]+2*self.iRad, size[1]+2*self.iRad), dtype='float64')
 
         self.Wlat = (np.random.randn(size[0], size[1], size[0], size[1]) +\
-                               np.random.randn(size[0], size[1], size[0], size[1]))*1j
+                      np.random.randn(size[0], size[1], size[0], size[1])*1j)
 
 
         # ===================================================================
